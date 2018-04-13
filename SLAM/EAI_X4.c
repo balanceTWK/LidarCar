@@ -40,13 +40,13 @@ void manipulationData()
                         package.buf[i] = eaix4_getchar();
                         package.buf[i] = eaix4_getchar() << 8;
                     }
-                    angleDiff = ((package.lsa >> 1) / 64 - (package.fsa >> 1) / 64) / package.lsn;
+                    angleDiff = ((package.lsa >> 1) - (package.fsa >> 1)) / package.lsn;
                     for (i = 0; i < package.lsn; i++)
                     {
                         angle = i * angleDiff;
                         if (package.buf[i] != 0)
                         {
-                            around[circle - 1].ap[count].angle = (package.fsa >> 1) / 64 + angle;
+                            around[circle - 1].ap[count].angle = (package.fsa >> 1) + angle;
                             around[circle - 1].ap[count].distance = package.buf[i];
                             count++;
                         }
@@ -79,8 +79,8 @@ void manipulationData()
                     package.cs = eaix4_getchar() << 8;
                     package.buf[0] = eaix4_getchar();
                     package.buf[0] = eaix4_getchar() << 8;
-                    around[circle - 1].firstpont.angle = (package.fsa >> 1) / 64;
-                    around[circle - 1].firstpont.distance = package.buf[0];
+                    around[circle - 1].firstpoint.angle = (package.fsa >> 1);
+                    around[circle - 1].firstpoint.distance = package.buf[0];
                 }
             }
         }

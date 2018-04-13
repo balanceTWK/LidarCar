@@ -26,7 +26,7 @@ typedef struct
 
 typedef struct
 {
-    AroundPoint firstpont;
+    AroundPoint firstpoint;
     AroundPoint ap[1440];
 		rt_int16_t number;
 } Around;
