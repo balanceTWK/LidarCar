@@ -86,6 +86,7 @@ void manipulationData()
         }
     }
 }
+
 void EAI_X4_GetDate()
 {
     rt_uint8_t reply[5];
