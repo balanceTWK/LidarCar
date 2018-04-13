@@ -1,0 +1,53 @@
+#include <rthw.h>
+#include <rtthread.h>
+#include "app_command.h"
+#include <finsh.h>
+
+#include "app_slam.h"
+
+#define stop                    "-s"
+#define force_stoppage          "-fs"
+#define start_scanning          "-sc"
+#define force_start_scanning    "-fsc"
+
+#define get_version_information "-gvf"
+#define get_health_status       "-ghs"
+
+
+void command(int argc, char** argv)
+{
+	if (argc > 1)
+	{	
+		if(!rt_strcmp(argv[1],stop))
+		{
+			slam_uart_putchar(0xA5);
+			slam_uart_putchar(0x65);
+		}
+		else if(!rt_strcmp(argv[1],force_stoppage))
+		{
+			slam_uart_putchar(0xA5);
+			slam_uart_putchar(0x00);
+		}
+		else if(!rt_strcmp(argv[1],start_scanning))
+		{
+			slam_uart_putchar(0xA5);
+			slam_uart_putchar(0x60);
+		}
+		else if(!rt_strcmp(argv[1],force_start_scanning))
+		{
+			slam_uart_putchar(0xA5);
+			slam_uart_putchar(0x61);
+		}
+		else if(!rt_strcmp(argv[1],get_version_information))
+		{
+			slam_uart_putchar(0xA5);
+			slam_uart_putchar(0x90);
+		}
+		else if(!rt_strcmp(argv[1],get_health_status))
+		{
+			slam_uart_putchar(0xA5);
+			slam_uart_putchar(0x91);
+		}
+	}
+}
+MSH_CMD_EXPORT(command, -s -fs -sc -fsc -gvf -ghs );

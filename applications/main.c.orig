@@ -1,0 +1,312 @@
+/*
+ * File      : main.c
+ * This file is part of RT-Thread RTOS
+ * COPYRIGHT (C) 2006 - 2012, RT-Thread Development Team
+ *
+ *  This program is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License along
+ *  with this program; if not, write to the Free Software Foundation, Inc.,
+ *  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Change Logs:
+ * Date           Author       Notes
+ *2017-12-15      DQL          the first version
+ */
+
+#include "app_uart.h"
+#include "app_slam.h"
+#include "inv_mpu.h"
+#include "inv_mpu_dmp_motion_driver.h"
+#include <drivers/pin.h>
+#include "drv_mpu9250.h"
+
+#include "board.h"
+
+#include "drv_pwm.h"
+
+#define BEEP 167 //PB8--167，在 drv_gpio.c 文件 pin_index pins[]
+
+
+#define KEY1 132 //PI1--132
+#define KEY2 133 //PI2--133
+#define KEY3 134 //PI3--134
+#define WK_UP 40 //PA0--40
+
+void hdr_callback(void *args)//回调函数
+{
+    char *a = args;//获取参数
+    rt_kprintf("\n down! : %s\n", a);
+}
+void irq_thread_entry(void* parameter)
+{
+    //绑定中断，下降沿模式，回调函数名为 hdr_callback
+    rt_pin_attach_irq(WK_UP, PIN_IRQ_MODE_RISING, hdr_callback, (void*)"WK_UP callbackargs");
+    //使能中断
+    rt_pin_irq_enable(WK_UP, PIN_IRQ_ENABLE);
+}
+
+void key_thread_entry(void* parameter)
+{
+//PE2、 PE3 设置上拉输入
+    rt_pin_mode(KEY1, PIN_MODE_INPUT_PULLUP);
+    rt_pin_mode(KEY2, PIN_MODE_INPUT_PULLUP);
+    rt_pin_mode(KEY3, PIN_MODE_INPUT_PULLUP);
+    while (1)
+    {
+        //检测到低电平，即按键 1 按下了
+        if (rt_pin_read(KEY1) == PIN_LOW)
+        {
+            TIM_SetTIM9Compare(0, 0);
+            TIM_SetTIM2Compare(0);
+            rt_kprintf("\nkey1 pressed!\n");
+        }
+        //检测到低电平，即按键 2 按下了
+        if (rt_pin_read(KEY2) == PIN_LOW)
+        {
+            TIM_SetTIM9Compare(300, 300);
+            TIM_SetTIM2Compare(1000);
+            rt_kprintf("\nkey2 pressed!\n");
+        }
+        //检测到高电平，即按键 wp 按下了
+        if (rt_pin_read(KEY3) == PIN_LOW)
+        {
+            TIM_SetTIM9Compare(800, 800);
+            TIM_SetTIM2Compare(2000);
+            rt_kprintf("\nKEY3 pressed!\n");
+        }
+        //挂起 20ms
+        rt_thread_delay(rt_tick_from_millisecond(20));
+    }
+}
+
+void beep_thread_entry(void* parameter)
+{
+//设置管脚为输出模式
+    rt_pin_mode(BEEP, PIN_MODE_OUTPUT);
+    while (1)
+    {
+        //输出低电平， 蜂鸣器叫
+        rt_pin_write(BEEP, PIN_HIGH);
+        //挂起 500ms
+        rt_thread_delay(rt_tick_from_millisecond(50));
+        //输出高电平， 蜂鸣器关闭
+        rt_pin_write(BEEP, PIN_LOW);
+        //挂起 500ms
+        rt_thread_delay(rt_tick_from_millisecond(1500));
+    }
+}
+#include "EAI_X4.h"
+void slam_thread_entry(void* parameter)
+{
+    rt_uint8_t slam_uart_rx_data;
+    struct SlamStruct data;
+    /* 打开串口 */
+    if (slam_uart_open("uart2") != RT_EOK)
+    {
+        rt_kprintf("uart2 open error.\n");
+        while (1)
+        {
+            rt_thread_delay(10);
+        }
+    }
+    while (1)
+    {
+        /* 读数据 */
+        slam_uart_rx_data = slam_uart_getchar();
+        /* 输出 */
+                         receiveEaiX4(slam_uart_rx_data, &data);
+//        uart_putchar(slam_uart_rx_data);
+
+//				rt_kprintf("%d",slam_uart_rx_data);
+    }
+}
+
+void wireless_thread_entry(void* parameter)
+{
+    rt_uint8_t uart_rx_data;
+
+    /* 打开串口 */
+    if (uart_open("uart6") != RT_EOK)
+    {
+        rt_kprintf("uart6 open error.\n");
+        while (1)
+        {
+            rt_thread_delay(10);
+        }
+    }
+    while (1)
+    {
+        /* 读数据 */
+        uart_rx_data = uart_getchar();
+        /* 输出 */
+        rt_kprintf("\nwireless:%d\n", uart_rx_data);
+    }
+}
+
+//传送数据给匿名四轴上位机软件(V2.6版本)
+//fun:功能字. 0X01~0X1C
+//data:数据缓存区,最多28字节!!
+//len:data区有效数据个数
+void usart1_niming_report(rt_uint8_t fun, rt_uint8_t*data, rt_uint8_t len)
+{
+    rt_uint8_t send_buf[32];
+    rt_uint8_t i;
+    if(len > 28)return;	//最多28字节数据
+    send_buf[len + 3] = 0;	//校验数置零
+    send_buf[0] = 0XAA;	//帧头
+    send_buf[1] = 0XAA;	//帧头
+    send_buf[2] = fun;	//功能字
+    send_buf[3] = len;	//数据长度
+    for(i = 0; i < len; i++)send_buf[4 + i] = data[i];			//复制数据
+    for(i = 0; i < len + 4; i++)send_buf[len + 4] += send_buf[i];	//计算校验和
+    for(i = 0; i < len + 5; i++)uart_putchar(send_buf[i]);	//发送数据到串口1
+}
+//发送加速度传感器数据+陀螺仪数据(传感器帧)
+//aacx,aacy,aacz:x,y,z三个方向上面的加速度值
+//gyrox,gyroy,gyroz:x,y,z三个方向上面的陀螺仪值
+void mpu6050_send_data(short aacx, short aacy, short aacz, short gyrox, short gyroy, short gyroz)
+{
+    rt_uint8_t tbuf[18];
+    tbuf[0] = (aacx >> 8) & 0XFF;
+    tbuf[1] = aacx & 0XFF;
+    tbuf[2] = (aacy >> 8) & 0XFF;
+    tbuf[3] = aacy & 0XFF;
+    tbuf[4] = (aacz >> 8) & 0XFF;
+    tbuf[5] = aacz & 0XFF;
+    tbuf[6] = (gyrox >> 8) & 0XFF;
+    tbuf[7] = gyrox & 0XFF;
+    tbuf[8] = (gyroy >> 8) & 0XFF;
+    tbuf[9] = gyroy & 0XFF;
+    tbuf[10] = (gyroz >> 8) & 0XFF;
+    tbuf[11] = gyroz & 0XFF;
+    tbuf[12] = 0; //因为开启MPL后,无法直接读取磁力计数据,所以这里直接屏蔽掉.用0替代.
+    tbuf[13] = 0;
+    tbuf[14] = 0;
+    tbuf[15] = 0;
+    tbuf[16] = 0;
+    tbuf[17] = 0;
+    usart1_niming_report(0X02, tbuf, 18); //传感器帧,0X02
+}
+//通过串口1上报结算后的姿态数据给电脑(状态帧)
+//roll:横滚角.单位0.01度。 -18000 -> 18000 对应 -180.00  ->  180.00度
+//pitch:俯仰角.单位 0.01度。-9000 - 9000 对应 -90.00 -> 90.00 度
+//yaw:航向角.单位为0.1度 0 -> 3600  对应 0 -> 360.0度
+//csb:超声波高度,单位:cm
+//prs:气压计高度,单位:mm
+void usart1_report_imu(short roll, short pitch, short yaw, short csb, int prs)
+{
+    rt_uint8_t tbuf[12];
+    tbuf[0] = (roll >> 8) & 0XFF;
+    tbuf[1] = roll & 0XFF;
+    tbuf[2] = (pitch >> 8) & 0XFF;
+    tbuf[3] = pitch & 0XFF;
+    tbuf[4] = (yaw >> 8) & 0XFF;
+    tbuf[5] = yaw & 0XFF;
+    tbuf[6] = (csb >> 8) & 0XFF;
+    tbuf[7] = csb & 0XFF;
+    tbuf[8] = (prs >> 24) & 0XFF;
+    tbuf[9] = (prs >> 16) & 0XFF;
+    tbuf[10] = (prs >> 8) & 0XFF;
+    tbuf[11] = prs & 0XFF;
+    usart1_niming_report(0X01, tbuf, 12); //状态帧,0X01
+}
+
+void mpu9250_thread_entry(void *parameter)
+{
+    float pitch, roll, yaw; 	      //欧拉角
+    while(1)
+    {
+        if(mpu_mpl_get_data(&pitch, &roll, &yaw) == 0)
+        {
+//            usart1_report_imu((int)(roll * 100), (int)(pitch * 100), (int)(yaw * 100), 0, 0);
+        }
+        rt_thread_delay(rt_tick_from_millisecond(10));
+    }
+}
+
+int main(void)
+{
+
+    rt_thread_t tid;
+
+    /* 创建test线程 *////////////////////////////////////////
+    tid = rt_thread_create("slam",
+                           slam_thread_entry,
+                           RT_NULL,
+                           4096,
+                           3,
+                           10);
+    /* 创建成功则启动线程 */
+    if (tid != RT_NULL)
+        rt_thread_startup(tid);
+
+    /* 创建test线程 *////////////////////////////////////////
+    tid = rt_thread_create("wireless",
+                           wireless_thread_entry,
+                           RT_NULL,
+                           256,
+                           3,
+                           10);
+    /* 创建成功则启动线程 */
+    if (tid != RT_NULL)
+        rt_thread_startup(tid);
+
+    /* 创建led线程 *////////////////////////////////////////
+    tid = rt_thread_create("beep",
+                           beep_thread_entry,
+                           RT_NULL,
+                           128,
+                           3,
+                           10);
+    /* 创建成功则启动线程 */
+    if (tid != RT_NULL)
+        rt_thread_startup(tid);
+
+    /* 创建 key 线程 *//////////////////////////////////////
+    tid = rt_thread_create("key",
+                           key_thread_entry,
+                           RT_NULL,
+                           128,
+                           3,
+                           10);
+    /* 创建成功则启动线程 */
+    if (tid != RT_NULL)
+        rt_thread_startup(tid);
+
+    /* 创建 irq 线程 *//////////////////////////////////////
+    tid = rt_thread_create("exirq",
+                           irq_thread_entry,
+                           RT_NULL,
+                           256,
+                           3,
+                           10);
+    /* 创建成功则启动线程 */
+    if (tid != RT_NULL)
+        rt_thread_startup(tid);
+
+    /* 创建 MPU9250 线程 *//////////////////////////////////
+    tid = rt_thread_create("mpu9250",
+                           mpu9250_thread_entry,
+                           RT_NULL,
+                           1024,
+                           5,
+                           20);
+    if (tid == RT_NULL)
+    {
+        return -RT_ERROR;
+    }
+    /* 创建成功则启动线程 */
+    rt_thread_startup(tid);
+
+    return 0;
+}
+

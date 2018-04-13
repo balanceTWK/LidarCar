@@ -1,0 +1,11 @@
+.\build\message_layer.o: DMP\mllite\message_layer.c
+.\build\message_layer.o: DMP\mllite\message_layer.h
+.\build\message_layer.o: .\DMP\driver\include\mltypes.h
+.\build\message_layer.o: .\DMP\driver\include\stdint_invensense.h
+.\build\message_layer.o: D:\MDK5\ARM\ARMCC\Bin\..\include\stdint.h
+.\build\message_layer.o: D:\MDK5\ARM\ARMCC\Bin\..\include\string.h
+.\build\message_layer.o: D:\MDK5\ARM\ARMCC\Bin\..\include\errno.h
+.\build\message_layer.o: D:\MDK5\ARM\ARMCC\Bin\..\include\limits.h
+.\build\message_layer.o: .\DMP\driver\include\log.h
+.\build\message_layer.o: D:\MDK5\ARM\ARMCC\Bin\..\include\stdlib.h
+.\build\message_layer.o: D:\MDK5\ARM\ARMCC\Bin\..\include\stdarg.h

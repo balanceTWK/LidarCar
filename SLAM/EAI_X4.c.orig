@@ -1,0 +1,10 @@
+#include "EAI_X4.h"
+
+rt_uint8_t receiveEaiX4(const rt_uint8_t slam_uart_rx_data, struct SlamStruct *data)
+{
+	struct SlamStruct dataxxx;
+	dataxxx.amout=122;
+	dataxxx.SLS[100].x=1;
+	dataxxx.SLS[100].y=1;
+		dataxxx.SLS[100].distance=1;
+}

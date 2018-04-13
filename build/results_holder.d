@@ -1,0 +1,17 @@
+.\build\results_holder.o: DMP\mllite\results_holder.c
+.\build\results_holder.o: D:\MDK5\ARM\ARMCC\Bin\..\include\string.h
+.\build\results_holder.o: DMP\mllite\results_holder.h
+.\build\results_holder.o: .\DMP\driver\include\mltypes.h
+.\build\results_holder.o: .\DMP\driver\include\stdint_invensense.h
+.\build\results_holder.o: D:\MDK5\ARM\ARMCC\Bin\..\include\stdint.h
+.\build\results_holder.o: D:\MDK5\ARM\ARMCC\Bin\..\include\errno.h
+.\build\results_holder.o: D:\MDK5\ARM\ARMCC\Bin\..\include\limits.h
+.\build\results_holder.o: DMP\mllite\ml_math_func.h
+.\build\results_holder.o: .\DMP\driver\include\mlmath.h
+.\build\results_holder.o: D:\MDK5\ARM\ARMCC\Bin\..\include\math.h
+.\build\results_holder.o: DMP\mllite\start_manager.h
+.\build\results_holder.o: DMP\mllite\data_builder.h
+.\build\results_holder.o: DMP\mllite\message_layer.h
+.\build\results_holder.o: .\DMP\driver\include\log.h
+.\build\results_holder.o: D:\MDK5\ARM\ARMCC\Bin\..\include\stdlib.h
+.\build\results_holder.o: D:\MDK5\ARM\ARMCC\Bin\..\include\stdarg.h

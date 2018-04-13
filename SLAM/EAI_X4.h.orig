@@ -1,0 +1,24 @@
+#ifndef __EAI_X4_H
+#define __EAI_X4_H
+
+#include <rtthread.h>
+#include <rthw.h>
+
+#define CoordinatePoint 100
+struct SlamLactionStruct
+{
+    rt_uint32_t x;
+				rt_uint32_t y;
+				rt_uint32_t distance;
+		};
+
+		struct SlamStruct
+		{
+				rt_uint32_t amout;
+				struct SlamLactionStruct SLS[CoordinatePoint];
+		};
+
+rt_uint8_t receiveEaiX4(const rt_uint8_t slam_uart_rx_data, struct SlamStruct *data);
+
+#endif
+
