@@ -7,7 +7,6 @@
 #define PH 0x55AA
 #define StartCTLSN 0x0101
 
-
 Around around[5];
 rt_int8_t circle = -1;
 rt_int16_t count = 0;
@@ -59,6 +58,8 @@ void manipulationData()
                     circle++;
                     if (circle > 1)
                     {
+                        around[circle - 2].number = count;
+                        count = 0;
                         if (circle == 6)
                         {
                             circle = 0;
@@ -68,8 +69,6 @@ void manipulationData()
                             rt_event_send(&ControlEvent, controlEventEaix4);
                             break;
                         }
-                        around[circle - 2].number = count;
-                        count = 0;
                     }
                     package.lsn = eaix4_getchar();
                     package.fsa = eaix4_getchar();
@@ -80,7 +79,7 @@ void manipulationData()
                     package.cs = eaix4_getchar() << 8;
                     package.buf[0] = eaix4_getchar();
                     package.buf[0] = eaix4_getchar() << 8;
-                    around[circle - 1].firstpont.angle = package.fsa;
+                    around[circle - 1].firstpont.angle = (package.fsa >> 1) / 64;
                     around[circle - 1].firstpont.distance = package.buf[0];
                 }
             }
@@ -108,17 +107,7 @@ void EAI_X4_GetDate()
                     if ((reply[0] == 0x05) && (reply[1] == 0x00) && (reply[2] == 0x00) && (reply[3] == 0x40) && (reply[4] == 0x81)) //接收扫描数据
                     {
                         rt_kprintf("\nStart receiving point data.\n");
-
                         manipulationData();
-//                            for (i = 0; i < 5; i++)
-//                            {
-//                                rt_kprintf("circle:%d firstpont.angle:%d firstpont.distance:%d\n", i, (around[i].firstpont.angle>>1)/64, (around[i].firstpont.distance>>1)/4);
-//                                for (rt_uint16_t x = 0; x < number[i]; x++)
-//                                {
-//                                    rt_kprintf("circle:%d angle:%d distance:%d\n", i, (around[i].ap[x].angle>>1)/64, (around[i].ap[x].distance)/4);
-//                                    rt_thread_delay(rt_tick_from_millisecond(20));
-//                                }
-//                            }
                     }
                     else if ((reply[0] == 0x14) && (reply[1] == 0x00) && (reply[2] == 0x00) && (reply[3] == 0x00) && (reply[4] == 0x04)) //接收设备信息
                     {

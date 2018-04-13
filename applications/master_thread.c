@@ -3,18 +3,28 @@
 #include "app_wirelessuart.h"
 #include "app_mpu9250.h"
 #include "app_beep.h"
+#include "EAI_X4.h"
 struct rt_event ControlEvent;
 
 void master_thread_entry(void *parameter)
 {
 	rt_uint32_t e;
+	rt_uint8_t i;
 	while(1)
 	{
 		/* 接收事件 */
 		if(rt_event_recv(&ControlEvent, controlEventEaix4, RT_EVENT_FLAG_OR | RT_EVENT_FLAG_CLEAR, RT_WAITING_NO, &e)==RT_EOK)
 		{
 			beep(1);
-			rt_thread_delay(rt_tick_from_millisecond(50));
+			for (i = 0; i < 5; i++)
+			{
+					rt_kprintf("circle:%d firstpont.angle:%d firstpont.distance:%d\n", i, (around[i].firstpont.angle), (around[i].firstpont.distance));
+					for (rt_uint16_t x = 0; x < around[i].number; x++)
+					{
+							rt_kprintf("circle:%d angle:%d distance:%d\n", i, (around[i].ap[x].angle), (around[i].ap[x].distance));
+//							rt_thread_delay(rt_tick_from_millisecond(20));
+					}
+			}
 			beep(0);
 		}
 		else

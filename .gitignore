@@ -11,6 +11,8 @@
 *.ilk
 *.old
 *.jason
+JLinkLog.txt
+JLinkSettings.ini
 build
 Debug
 documentation/html

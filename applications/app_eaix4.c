@@ -118,7 +118,7 @@ void Eaix4Health()
     eaix4_putchar(0x91);
 }
 
-void eaix4command(int argc, char **argv)
+void eaix4cmd(int argc, char **argv)
 {
     if (argc > 1)
     {
@@ -150,7 +150,7 @@ void eaix4command(int argc, char **argv)
         }
     }
 }
-MSH_CMD_EXPORT(eaix4command, -s - fs - sc - fsc - gvf - ghs);
+MSH_CMD_EXPORT(eaix4cmd, -s - fs - sc - fsc - gvf - ghs);
 
 
 #include "EAI_X4.h"
