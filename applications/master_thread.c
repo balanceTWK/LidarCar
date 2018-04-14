@@ -44,12 +44,12 @@ void master_thread_entry(void *parameter)
 int master_init()
 {
     rt_thread_t tid;
-		rt_kprintf("\nmaster_init.\n");
+		rt_kprintf("master_init.\n");
 		rt_event_init(&ControlEvent,"Control",RT_IPC_FLAG_FIFO);
 		eaix4_init();
 		wireless_init();
 		mpu9250_init();
-		rt_kprintf("\nmaster_done.\n");
+		rt_kprintf("master_done.\n");
     /* 创建test线程 */
     tid = rt_thread_create("master",
                            master_thread_entry,
