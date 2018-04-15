@@ -26,11 +26,11 @@ rt_err_t mpu_dmp_write_Len(rt_uint8_t addr, rt_uint8_t reg, rt_uint8_t len, rt_u
     rt_uint8_t buf[len + 1];
     rt_uint8_t i;
     buf[0] = reg;
-    for(i = 0; i < len; i++)
+    for (i = 0; i < len; i++)
     {
         buf[i + 1] = date[i];
     }
-    if(rt_i2c_master_send(mpu9250_i2c_bus, addr, 0, buf, len + 1) == len + 1)
+    if (rt_i2c_master_send(mpu9250_i2c_bus, addr, 0, buf, len + 1) == len + 1)
         return RT_EOK;
     else
         return -RT_ERROR;
@@ -51,7 +51,7 @@ rt_err_t mpu_dmp_read_Len(rt_uint8_t addr, rt_uint8_t reg, rt_uint8_t len, rt_ui
     msgs[1].buf   = buf;
     msgs[1].len   = len;
 
-    if(rt_i2c_transfer(mpu9250_i2c_bus, msgs, 2) == 2)
+    if (rt_i2c_transfer(mpu9250_i2c_bus, msgs, 2) == 2)
         return RT_EOK;
     else
         return -RT_ERROR;
@@ -68,7 +68,7 @@ rt_err_t mpu9250_write_reg(rt_uint8_t reg, rt_uint8_t data)
     buf[0] = reg;
     buf[1] = data;
 
-    if(rt_i2c_master_send(mpu9250_i2c_bus, MPU9250_ADDR, 0, buf, 2) == 2)
+    if (rt_i2c_master_send(mpu9250_i2c_bus, MPU9250_ADDR, 0, buf, 2) == 2)
         return RT_EOK;
     else
         return -RT_ERROR;
@@ -80,7 +80,7 @@ rt_err_t mpu9250_write_magnetometer_reg(rt_uint8_t reg, rt_uint8_t data)
     buf[0] = reg;
     buf[1] = data;
 
-    if(rt_i2c_master_send(mpu9250_i2c_bus, AK8963_ADDR, 0, buf, 2) == 2)
+    if (rt_i2c_master_send(mpu9250_i2c_bus, AK8963_ADDR, 0, buf, 2) == 2)
         return RT_EOK;
     else
         return -RT_ERROR;
@@ -103,7 +103,7 @@ rt_err_t mpu9250_read_reg(rt_uint8_t reg, rt_uint8_t *data)
     msgs[1].buf   = data;
     msgs[1].len   = 1;
 
-    if(rt_i2c_transfer(mpu9250_i2c_bus, msgs, 2) == 2)
+    if (rt_i2c_transfer(mpu9250_i2c_bus, msgs, 2) == 2)
         return RT_EOK;
     else
         return -RT_ERROR;
@@ -170,7 +170,7 @@ rt_err_t mpu9250_read_magnetometer_reg(rt_uint8_t reg, rt_uint8_t *data)
     msgs[1].buf   = data;
     msgs[1].len   = 1;
 
-    if(rt_i2c_transfer(mpu9250_i2c_bus, msgs, 2) == 2)
+    if (rt_i2c_transfer(mpu9250_i2c_bus, msgs, 2) == 2)
         return RT_EOK;
     else
         return -RT_ERROR;
@@ -200,11 +200,11 @@ rt_err_t mpu9250_set_accel_fsr(rt_uint8_t fsr)
 rt_err_t mpu9250_set_lpf(rt_uint16_t lpf)
 {
     rt_uint8_t data = 0;
-    if(lpf >= 188)data = 1;
-    else if(lpf >= 98)data = 2;
-    else if(lpf >= 42)data = 3;
-    else if(lpf >= 20)data = 4;
-    else if(lpf >= 10)data = 5;
+    if (lpf >= 188)data = 1;
+    else if (lpf >= 98)data = 2;
+    else if (lpf >= 42)data = 3;
+    else if (lpf >= 20)data = 4;
+    else if (lpf >= 10)data = 5;
     else data = 6;
     return mpu9250_write_reg(MPU_CFG_REG, data); //设置数字低通滤波器
 }
@@ -215,11 +215,11 @@ rt_err_t mpu9250_set_lpf(rt_uint16_t lpf)
 rt_err_t mpu9250_set_sample_rate(rt_uint16_t rate)
 {
     rt_uint8_t data;
-    if(rate > 1000)rate = 1000;
-    if(rate < 4)rate = 4;
+    if (rate > 1000)rate = 1000;
+    if (rate < 4)rate = 4;
     data = 1000 / rate - 1;
-    data = mpu9250_write_reg(MPU_SAMPLE_RATE_REG, data);	//设置数字低通滤波器
-    return mpu9250_set_lpf(rate / 2);	//自动设置LPF为采样率的一半
+    data = mpu9250_write_reg(MPU_SAMPLE_RATE_REG, data);    //设置数字低通滤波器
+    return mpu9250_set_lpf(rate / 2);   //自动设置LPF为采样率的一半
 }
 //rt_err_t MPU9250_write_len(rt_uint8_t addr,rt_uint8_t reg,rt_uint8_t len,rt_uint8_t *buf);
 //rt_err_t MPU9250_read_len(rt_uint8_t addr,rt_uint8_t reg,rt_uint8_t len,rt_uint8_t *buf);
@@ -409,14 +409,14 @@ int mpu9250_init(void)
 
     MPUDEBUG("mpu_dmp_init is runing !\r\n");
 
-    while(mpu_dmp_init())
+    while (mpu_dmp_init())
     {
         MPUDEBUG("mpu_dmp_init waiting  ! 0x%02x\r\n", res);
         rt_thread_delay(rt_tick_from_millisecond(100));
     }
     MPUDEBUG("mpu_dmp_init is ok !\r\n");
-		
-		rt_thread_t tid;
+
+    rt_thread_t tid;
     /* 创建 MPU9250 线程 *//////////////////////////////////
     tid = rt_thread_create("mpu9250",
                            mpu9250_thread_entry,
@@ -427,7 +427,7 @@ int mpu9250_init(void)
     /* 创建成功则启动线程 */
     if (tid != RT_NULL)
         rt_thread_startup(tid);
-		
+
     return RT_EOK;
-		
+
 }

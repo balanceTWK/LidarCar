@@ -40,39 +40,38 @@ void manipulationData()
                         package.buf[i] = eaix4_getchar();
                         package.buf[i] = eaix4_getchar() << 8;
                     }
-										if(package.fsa>package.lsa)
-										{
-//											rt_kprintf("warning circle:%d\n",circle-1);
-											angleDiff = ((package.lsa >> 1) + (23040-(package.fsa >> 1))) / package.lsn;
-											for (i = 0; i < package.lsn; i++)
-											{
-													angle = i * angleDiff;
-													if (package.buf[i] != 0)
-													{
-														around[circle - 1].ap[count].angle = (package.fsa >> 1) + angle;
-														around[circle - 1].ap[count].distance = package.buf[i];
-														if(around[circle - 1].ap[count].angle>23040)
-														{
-															around[circle - 1].ap[count].angle=around[circle - 1].ap[count].angle-23040;
-														}	
-														count++;													
-													}
-											}	
-										}
-										else
-										{
-											angleDiff = ((package.lsa >> 1) - (package.fsa >> 1)) / package.lsn;
-											for (i = 0; i < package.lsn; i++)
-											{
-													angle = i * angleDiff;
-													if (package.buf[i] != 0)
-													{
-															around[circle - 1].ap[count].angle = (package.fsa >> 1) + angle;
-															around[circle - 1].ap[count].distance = package.buf[i];
-															count++;
-													}
-											}											
-										}                   
+                    if (package.fsa > package.lsa)
+                    {
+                        angleDiff = ((package.lsa >> 1) + (23040 - (package.fsa >> 1))) / package.lsn;
+                        for (i = 0; i < package.lsn; i++)
+                        {
+                            angle = i * angleDiff;
+                            if (package.buf[i] != 0)
+                            {
+                                around[circle - 1].ap[count].angle = (package.fsa >> 1) + angle;
+                                around[circle - 1].ap[count].distance = package.buf[i];
+                                if (around[circle - 1].ap[count].angle > 23040)
+                                {
+                                    around[circle - 1].ap[count].angle = around[circle - 1].ap[count].angle - 23040;
+                                }
+                                count++;
+                            }
+                        }
+                    }
+                    else
+                    {
+                        angleDiff = ((package.lsa >> 1) - (package.fsa >> 1)) / package.lsn;
+                        for (i = 0; i < package.lsn; i++)
+                        {
+                            angle = i * angleDiff;
+                            if (package.buf[i] != 0)
+                            {
+                                around[circle - 1].ap[count].angle = (package.fsa >> 1) + angle;
+                                around[circle - 1].ap[count].distance = package.buf[i];
+                                count++;
+                            }
+                        }
+                    }
                     angle = 0;
                 }
                 else if (ct == 0x01)//ÆðÊ¼µã
