@@ -128,7 +128,7 @@ void EAI_X4_GetDate()
                     }
                     if ((reply[0] == 0x05) && (reply[1] == 0x00) && (reply[2] == 0x00) && (reply[3] == 0x40) && (reply[4] == 0x81)) //接收扫描数据
                     {
-                        rt_kprintf("\nStart receiving point data.\n");
+//                        rt_kprintf("\nStart receiving point data.\n");
                         manipulationData();
                     }
                     else if ((reply[0] == 0x14) && (reply[1] == 0x00) && (reply[2] == 0x00) && (reply[3] == 0x00) && (reply[4] == 0x04)) //接收设备信息

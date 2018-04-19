@@ -4,12 +4,19 @@
 #include "app_mpu9250.h"
 #include "app_beep.h"
 #include "EAI_X4.h"
+#include "app_move.h"
 struct rt_event ControlEvent;
 
 void master_thread_entry(void *parameter)
 {
     rt_uint32_t e;
     rt_uint8_t i;
+		rt_uint32_t buf;
+		rt_int8_t fsignal=0;
+		rt_int8_t bsignal=0;
+		rt_int8_t lsignal=0;
+		rt_int8_t rsignal=0;
+
     while (1)
     {
         /* 接收事件 */
@@ -21,13 +28,54 @@ void master_thread_entry(void *parameter)
                 {
                     if (around[i].ap[x].distance <= 800)
                     {
-                        rt_kprintf("warning circle:%d angle:%d distance:%d\n", i, ((rt_uint32_t)around[i].ap[x].angle) * 100 / 64, ((rt_uint32_t)around[i].ap[x].distance) * 10 / 4);
-                    }
-                }
+//                      rt_kprintf("warning circle:%d angle:%d distance:%d\n", i, ((rt_uint32_t)around[i].ap[x].angle) * 100 / 64, ((rt_uint32_t)around[i].ap[x].distance) / 4);
+											buf = (rt_uint32_t)around[i].ap[x].angle * 100 / 64 ;
+											if(buf >= 31500 || buf < 4500)
+											{
+												fsignal++;
+											}
+											else if(buf >= 4500 && buf < 13500)
+											{
+												rsignal++;
+											}
+											else if(buf >= 13500 && buf < 22500)
+											{
+												bsignal++;
+											}
+											else if(buf >= 22500 && buf < 31500)
+											{
+												lsignal++;
+											}											
+                    }										
+                }	
             }
-            beep(1);
-            rt_thread_delay(rt_tick_from_millisecond(50));
-            beep(0);
+								if(fsignal>=3)
+								{
+									carBack();
+								}
+								else if(rsignal>=3)
+								{
+									carLeft();
+								}
+								else if(bsignal>=3)
+								{
+									carForward();
+								}
+								else if(lsignal>=3)
+								{
+									carRight();
+								}
+								else
+								{
+									carStop();
+								}
+							 fsignal=0;
+							 bsignal=0;
+							 lsignal=0;
+							 rsignal=0;
+//            beep(1);
+//            rt_thread_delay(rt_tick_from_millisecond(50));
+//            beep(0);
             Eaix4Scaning();
         }
         else
