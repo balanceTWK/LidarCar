@@ -77,7 +77,7 @@ void HAL_TIM_PWM_MspInit(TIM_HandleTypeDef *htim)
 
 //设置TIM9通道1 2的占空比
 //compare:比较值
-void TIM_SetTIM2Compare(rt_uint32_t compare)
+void SetTim2Compare(rt_uint32_t compare)
 {
 	TIM2->CCR1=compare; 
 }
@@ -85,21 +85,18 @@ void TIM_SetTIM2Compare(rt_uint32_t compare)
 
 //设置TIM9通道1 2的占空比
 //compare:比较值
-void TIM_SetTIM9Compare(rt_uint32_t compare1,rt_uint32_t compare2)
+void SetTim9Compare(rt_uint32_t compare1,rt_uint32_t compare2)
 {
 	TIM9->CCR1=compare1; 
 	TIM9->CCR2=compare2;
 }
 
-
-	
-
 int hw_PWM_init(void)
 {
 	TIM_2_9_PWM_Init(2000-1,9-1);      //180M/9=20M的计数频率，自动重装载为2000，那么PWM频率为20M/2000=10kHZ
 
-  TIM_SetTIM9Compare(300,300);
-	TIM_SetTIM2Compare(300);
+  SetTim9Compare(300,300);
+	SetTim2Compare(300);
 	return RT_EOK;
 }
 INIT_BOARD_EXPORT(hw_PWM_init);

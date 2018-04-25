@@ -11,72 +11,101 @@ void master_thread_entry(void *parameter)
 {
     rt_uint32_t e;
     rt_uint8_t i;
-		rt_uint32_t buf;
-		rt_int8_t fsignal=0;
-		rt_int8_t bsignal=0;
-		rt_int8_t lsignal=0;
-		rt_int8_t rsignal=0;
+    rt_uint32_t buf;
+    rt_int8_t fsignalL = 0;
+    rt_int8_t fsignalR = 0;
+    rt_int8_t bsignalL = 0;
+    rt_int8_t bsignalR = 0;
+    rt_int8_t lsignalL = 0;
+    rt_int8_t lsignalR = 0;
+    rt_int8_t rsignalL = 0;
+    rt_int8_t rsignalR = 0;
 
     while (1)
     {
         /* 接收事件 */
         if (rt_event_recv(&ControlEvent, controlEventEaix4, RT_EVENT_FLAG_OR | RT_EVENT_FLAG_CLEAR, RT_WAITING_NO, &e) == RT_EOK)
         {
-            for (i = 1; i < 5; i++)
+            if (e & controlEventEaix4)
             {
-                for (rt_uint16_t x = 0; x < around[i].number; x++)
+                for (i = 1; i < 5; i++)
                 {
-                    if (around[i].ap[x].distance <= 800)
+                    for (rt_uint16_t x = 0; x < around[i].number; x++)
                     {
+                        if (around[i].ap[x].distance <= 800)
+                        {
 //                      rt_kprintf("warning circle:%d angle:%d distance:%d\n", i, ((rt_uint32_t)around[i].ap[x].angle) * 100 / 64, ((rt_uint32_t)around[i].ap[x].distance) / 4);
-											buf = (rt_uint32_t)around[i].ap[x].angle * 100 / 64 ;
-											if(buf >= 31500 || buf < 4500)
-											{
-												fsignal++;
-											}
-											else if(buf >= 4500 && buf < 13500)
-											{
-												rsignal++;
-											}
-											else if(buf >= 13500 && buf < 22500)
-											{
-												bsignal++;
-											}
-											else if(buf >= 22500 && buf < 31500)
-											{
-												lsignal++;
-											}											
-                    }										
-                }	
+                            buf = (rt_uint32_t)around[i].ap[x].angle * 100 / 64 ;
+                            if (buf >= 31500 || buf < 4500)
+                            {
+                                if (buf >= 31500)
+                                {
+                                    fsignalL++;
+                                }
+                                else if (buf < 4500)
+                                {
+                                    fsignalR++;
+                                }
+
+                            }
+                            else if (buf >= 4500 && buf < 13500)
+                            {
+                                if (buf >= 4500)
+                                {
+                                    rsignalL++;
+                                }
+                                else if (buf < 13500)
+                                {
+                                    rsignalR++;
+                                }
+                            }
+                            else if (buf >= 13500 && buf < 22500)
+                            {
+                                if (buf >= 13500)
+                                {
+                                    bsignalL++;
+                                }
+                                else if (buf < 22500)
+                                {
+                                    bsignalR++;
+                                }
+                            }
+                            else if (buf >= 22500 && buf < 31500)
+                            {
+                                if (buf >= 22500)
+                                {
+                                    lsignalL++;
+                                }
+                                else if (buf < 31500)
+                                {
+                                    lsignalR++;
+                                }
+                            }
+                        }
+                    }
+                }
+                if ((fsignalL == 0) && (fsignalR == 0))
+                {
+                    carForward();
+                }
+                else if (fsignalL > fsignalR)
+                {
+                    carRight();
+                }
+                else if (fsignalL <= fsignalR)
+                {
+                    carLeft();
+                }
+                fsignalL = 0;
+                fsignalR = 0;
+                bsignalL = 0;
+                bsignalR = 0;
+                lsignalL = 0;
+                lsignalR = 0;
+                rsignalL = 0;
+                rsignalR = 0;
+                Eaix4Scaning();
             }
-								if(fsignal>=3)
-								{
-									carBack();
-								}
-								else if(rsignal>=3)
-								{
-									carLeft();
-								}
-								else if(bsignal>=3)
-								{
-									carForward();
-								}
-								else if(lsignal>=3)
-								{
-									carRight();
-								}
-								else
-								{
-									carStop();
-								}
-							 fsignal=0;
-							 bsignal=0;
-							 lsignal=0;
-							 rsignal=0;
-//            beep(1);
-//            rt_thread_delay(rt_tick_from_millisecond(50));
-//            beep(0);
-            Eaix4Scaning();
         }
         else
         {
@@ -98,9 +127,9 @@ int master_init()
     tid = rt_thread_create("master",
                            master_thread_entry,
                            RT_NULL,
-                           2048,
+                           1024,
                            3,
-                           20);
+                           10);
     /* 创建成功则启动线程 */
     if (tid != RT_NULL)
         rt_thread_startup(tid);

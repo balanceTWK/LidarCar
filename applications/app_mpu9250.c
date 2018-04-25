@@ -1,7 +1,4 @@
 #include <rthw.h>
-#include <rtthread.h>
-
-#include <rthw.h>
 #include <rtdevice.h>
 
 #include "app_mpu9250.h"

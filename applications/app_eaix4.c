@@ -177,7 +177,7 @@ void eaix4_init(void)
                            RT_NULL,
                            384,
                            3,
-                           20);
+                           30);
     /* 创建成功则启动线程 */
     if (tid != RT_NULL)
         rt_thread_startup(tid);	

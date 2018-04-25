@@ -415,6 +415,11 @@
               <FileType>1</FileType>
               <FilePath>.\applications\master_thread.c</FilePath>
             </File>
+            <File>
+              <FileName>app_speed.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\applications\app_speed.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -454,6 +459,11 @@
               <FileName>drv_pwm.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\drivers\drv_pwm.c</FilePath>
+            </File>
+            <File>
+              <FileName>drv_abphase.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\drivers\drv_abphase.c</FilePath>
             </File>
           </Files>
         </Group>

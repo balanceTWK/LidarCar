@@ -3,8 +3,6 @@
 
 #include <rthw.h>
 #include <rtthread.h>
-
-#include <rthw.h>
 #include <rtdevice.h>
 
 #include "drv_iic.h"
