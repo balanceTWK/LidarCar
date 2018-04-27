@@ -5,6 +5,6 @@
 #include <rtthread.h>
 
 void setcounterzero(void);
-void getspeedcounter(rt_uint32_t* speed1,rt_uint32_t* speed2);
+void getspeedcounter(rt_int16_t* speed1,rt_int16_t* speed2);
 
 #endif

@@ -21,17 +21,17 @@ void TIM_abphase_Init()
     TIM3_Handler.Instance = TIM3;
     TIM3_Handler.Init.Prescaler = 0;
     TIM3_Handler.Init.CounterMode = TIM_COUNTERMODE_UP;
-    TIM3_Handler.Init.Period = 60000;
+    TIM3_Handler.Init.Period = 0xffff;
     TIM3_Handler.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
     sConfig.EncoderMode = TIM_ENCODERMODE_TI12;
     sConfig.IC1Polarity = TIM_ICPOLARITY_RISING;
     sConfig.IC1Selection = TIM_ICSELECTION_DIRECTTI;
     sConfig.IC1Prescaler = TIM_ICPSC_DIV1;
-    sConfig.IC1Filter = 0;
+    sConfig.IC1Filter = 5;
     sConfig.IC2Polarity = TIM_ICPOLARITY_RISING;
     sConfig.IC2Selection = TIM_ICSELECTION_DIRECTTI;
     sConfig.IC2Prescaler = TIM_ICPSC_DIV1;
-    sConfig.IC2Filter = 0;
+    sConfig.IC2Filter = 5;
 
     HAL_TIM_Encoder_Init(&TIM3_Handler, &sConfig);
 
@@ -44,18 +44,18 @@ void TIM_abphase_Init()
     TIM8_Handler.Instance = TIM8;
     TIM8_Handler.Init.Prescaler = 0;
     TIM8_Handler.Init.CounterMode = TIM_COUNTERMODE_UP;
-    TIM8_Handler.Init.Period = 60000;
+    TIM8_Handler.Init.Period = 0xffff;
     TIM8_Handler.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
     TIM8_Handler.Init.RepetitionCounter = 0;
     sConfig.EncoderMode = TIM_ENCODERMODE_TI12;
     sConfig.IC1Polarity = TIM_ICPOLARITY_RISING;
     sConfig.IC1Selection = TIM_ICSELECTION_DIRECTTI;
     sConfig.IC1Prescaler = TIM_ICPSC_DIV1;
-    sConfig.IC1Filter = 0;
+    sConfig.IC1Filter = 5;
     sConfig.IC2Polarity = TIM_ICPOLARITY_RISING;
     sConfig.IC2Selection = TIM_ICSELECTION_DIRECTTI;
     sConfig.IC2Prescaler = TIM_ICPSC_DIV1;
-    sConfig.IC2Filter = 0;
+    sConfig.IC2Filter = 5;
 
     HAL_TIM_Encoder_Init(&TIM8_Handler, &sConfig);
 
@@ -114,10 +114,10 @@ void setcounterzero(void)
     __HAL_TIM_SET_COUNTER(&TIM8_Handler, 0);
 }
 
-void getspeedcounter(rt_uint32_t *speed1, rt_uint32_t *speed2)
+void getspeedcounter(rt_int16_t *speed1, rt_int16_t *speed2)
 {
     *speed1 = __HAL_TIM_GET_COUNTER(&TIM3_Handler);
-    *speed2 = __HAL_TIM_GET_COUNTER(&TIM8_Handler);
+    *speed2 = 0 - __HAL_TIM_GET_COUNTER(&TIM8_Handler);
 }
 
 int hw_ABP_init(void)

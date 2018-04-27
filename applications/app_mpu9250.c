@@ -419,7 +419,7 @@ int mpu9250_init(void)
                            mpu9250_thread_entry,
                            RT_NULL,
                            1024,
-                           3,
+                           5,
                            20);
     /* 创建成功则启动线程 */
     if (tid != RT_NULL)

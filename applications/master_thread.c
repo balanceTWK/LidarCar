@@ -5,7 +5,13 @@
 #include "app_beep.h"
 #include "EAI_X4.h"
 #include "app_move.h"
+#include "app_speed.h"
+
 struct rt_event ControlEvent;
+struct rt_mutex SpeedMutex;
+
+rt_int16_t wantspeed1 = 100;
+rt_int16_t wantspeed2 = 100;
 
 void master_thread_entry(void *parameter)
 {
@@ -20,11 +26,11 @@ void master_thread_entry(void *parameter)
     rt_int8_t lsignalR = 0;
     rt_int8_t rsignalL = 0;
     rt_int8_t rsignalR = 0;
-
+		carForward();
     while (1)
     {
         /* 接收事件 */
-        if (rt_event_recv(&ControlEvent, controlEventEaix4, RT_EVENT_FLAG_OR | RT_EVENT_FLAG_CLEAR, RT_WAITING_NO, &e) == RT_EOK)
+        if (rt_event_recv(&ControlEvent, controlEventEaix4, RT_EVENT_FLAG_OR | RT_EVENT_FLAG_CLEAR, RT_WAITING_FOREVER, &e) == RT_EOK)
         {
             if (e & controlEventEaix4)
             {
@@ -109,7 +115,7 @@ void master_thread_entry(void *parameter)
         }
         else
         {
-            rt_thread_delay(rt_tick_from_millisecond(50));
+            rt_thread_delay(rt_tick_from_millisecond(100));
         }
     }
 }
@@ -117,19 +123,24 @@ void master_thread_entry(void *parameter)
 int master_init()
 {
     rt_thread_t tid;
+
     rt_kprintf("master_init.\n");
+	
     rt_event_init(&ControlEvent, "Control", RT_IPC_FLAG_FIFO);
+		rt_mutex_init(&SpeedMutex, "speed", RT_IPC_FLAG_FIFO);
+	
     eaix4_init();
     wireless_init();
     mpu9250_init();
+		speed_init();
     rt_kprintf("master_done.\n");
     /* 创建test线程 */
     tid = rt_thread_create("master",
                            master_thread_entry,
                            RT_NULL,
-                           1024,
+                           4028,
                            3,
-                           10);
+                           20);
     /* 创建成功则启动线程 */
     if (tid != RT_NULL)
         rt_thread_startup(tid);

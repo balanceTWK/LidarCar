@@ -117,7 +117,7 @@ void wireless_init(void)
                            wireless_thread_entry,
                            RT_NULL,
                            256,
-                           3,
+                           5,
                            10);
     /* 创建成功则启动线程 */
     if (tid != RT_NULL)

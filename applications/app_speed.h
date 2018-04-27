@@ -4,5 +4,6 @@
 #include <rthw.h>
 #include <rtthread.h>
 
+int speed_init(void);
 
 #endif
