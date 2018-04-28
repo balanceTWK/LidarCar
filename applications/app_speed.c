@@ -39,8 +39,8 @@ void setpwm(rt_int16_t pwm1,rt_int16_t pwm2)
 }
 void speed_thread_entry(void *parameter)
 {
-//	rt_uint16_t i=0;
 	
+//	rt_uint16_t i=0;
     rt_int16_t speed1;
     rt_int16_t speed2;
 

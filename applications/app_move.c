@@ -85,8 +85,3 @@ void carMove(int argc, char** argv)
 	}
 }
 MSH_CMD_EXPORT(carMove, control car movement (-f -b -l -r -s) );
-
-
-
-
-
