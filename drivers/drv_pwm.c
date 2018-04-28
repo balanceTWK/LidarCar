@@ -36,7 +36,7 @@ void TIM_2_9_PWM_Init(rt_uint16_t arr,rt_uint16_t psc)
     HAL_TIM_PWM_Init(&TIMx_Handler);       //初始化PWM    
     TIMx_CHxHandler.OCMode=TIM_OCMODE_PWM1; //模式选择PWM1
     TIMx_CHxHandler.Pulse=arr/2;            //设置比较值,此值用来确定占空比，默认比较值为自动重装载值的一半,即占空比为50%
-    TIMx_CHxHandler.OCPolarity=TIM_OCPOLARITY_LOW; //输出比较极性为低 
+    TIMx_CHxHandler.OCPolarity=TIM_OCPOLARITY_HIGH; //输出比较极性为低 
     HAL_TIM_PWM_ConfigChannel(&TIMx_Handler,&TIMx_CHxHandler,TIM_CHANNEL_1);//配置TIM3通道4
 		HAL_TIM_PWM_ConfigChannel(&TIMx_Handler,&TIMx_CHxHandler,TIM_CHANNEL_2);//配置TIM3通道4
 		HAL_TIM_PWM_Start(&TIMx_Handler,TIM_CHANNEL_1);//开启PWM通道4
@@ -44,6 +44,7 @@ void TIM_2_9_PWM_Init(rt_uint16_t arr,rt_uint16_t psc)
 		
     TIMx_Handler.Instance=TIM2;            //定时器3
     HAL_TIM_PWM_Init(&TIMx_Handler);       //初始化PWM
+		TIMx_CHxHandler.OCPolarity=TIM_OCPOLARITY_LOW; //输出比较极性为低 
     HAL_TIM_PWM_ConfigChannel(&TIMx_Handler,&TIMx_CHxHandler,TIM_CHANNEL_1);//配置TIM3通道4
     HAL_TIM_PWM_Start(&TIMx_Handler,TIM_CHANNEL_1);//开启PWM通道4	
 }
@@ -62,7 +63,7 @@ void HAL_TIM_PWM_MspInit(TIM_HandleTypeDef *htim)
 	
     GPIO_Initure.Pin=pwm1_PIN|pwm2_PIN;           	//PB1
     GPIO_Initure.Mode=GPIO_MODE_AF_PP;  	//复用推挽输出
-    GPIO_Initure.Pull=GPIO_PULLUP;          //上拉
+    GPIO_Initure.Pull=GPIO_PULLDOWN;          //上拉
     GPIO_Initure.Speed=GPIO_SPEED_HIGH;     //高速
 		GPIO_Initure.Alternate= GPIO_AF3_TIM9;	//复用为TIM9_CH1`2
     HAL_GPIO_Init(GPIOE,&GPIO_Initure);

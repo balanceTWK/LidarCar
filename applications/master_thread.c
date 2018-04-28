@@ -11,7 +11,7 @@ struct rt_event ControlEvent;
 struct rt_mutex SpeedMutex;
 
 rt_int16_t wantspeed1 = 100;
-rt_int16_t wantspeed2 = 100;
+rt_int16_t wantspeed2 = - 100;
 
 void master_thread_entry(void *parameter)
 {
@@ -26,7 +26,6 @@ void master_thread_entry(void *parameter)
     rt_int8_t lsignalR = 0;
     rt_int8_t rsignalL = 0;
     rt_int8_t rsignalR = 0;
-		carForward();
     while (1)
     {
         /* 接收事件 */
@@ -52,7 +51,6 @@ void master_thread_entry(void *parameter)
                                 {
                                     fsignalR++;
                                 }
-
                             }
                             else if (buf >= 4500 && buf < 13500)
                             {
