@@ -5,7 +5,7 @@
 
 rt_uint8_t Eaix4Buff[45000];
 
-static struct rt_messagequeue  	Eaix4Mq;
+static struct rt_messagequeue   Eaix4Mq;
 
 /* 串口设备句柄 */
 static rt_device_t eaix4_device = RT_NULL;
@@ -15,9 +15,9 @@ static rt_err_t eaix4_intput(rt_device_t dev, rt_size_t size)
 {
     rt_uint8_t ch;
     /* 读取1字节数据 */
-    if(rt_device_read(eaix4_device, 0, &ch, 1) == 1)
+    if (rt_device_read(eaix4_device, 0, &ch, 1) == 1)
     {
-        rt_mq_send (&Eaix4Mq, &ch, 1);
+        rt_mq_send(&Eaix4Mq, &ch, 1);
     }
     return RT_EOK;
 }
@@ -25,7 +25,7 @@ static rt_err_t eaix4_intput(rt_device_t dev, rt_size_t size)
 rt_uint8_t  eaix4_getchar(void)
 {
     rt_uint8_t ch;
-		rt_mq_recv(&Eaix4Mq,&ch,1,RT_WAITING_FOREVER);
+    rt_mq_recv(&Eaix4Mq, &ch, 1, RT_WAITING_FOREVER);
     return ch;
 }
 
@@ -83,8 +83,8 @@ rt_err_t eaix4_open(const char *name)
         return -RT_ERROR;
     }
 
-    /* 初始化消息队列对象 */	
-		rt_mq_init(&Eaix4Mq, "EAIX4", Eaix4Buff, 1,sizeof(Eaix4Buff),RT_IPC_FLAG_FIFO);
+    /* 初始化消息队列对象 */
+    rt_mq_init(&Eaix4Mq, "EAIX4", Eaix4Buff, 1, sizeof(Eaix4Buff), RT_IPC_FLAG_FIFO);
 
     return RT_EOK;
 }
@@ -163,7 +163,7 @@ void eaix4_thread_entry(void *parameter)
     }
     while (1)
     {
-			EAI_X4_GetDate();
+        EAI_X4_GetDate();
     }
 }
 
@@ -180,6 +180,6 @@ void eaix4_init(void)
                            30);
     /* 创建成功则启动线程 */
     if (tid != RT_NULL)
-        rt_thread_startup(tid);	
-		
+        rt_thread_startup(tid);
+
 }

@@ -10,22 +10,18 @@
 struct rt_event ControlEvent;
 struct rt_mutex SpeedMutex;
 
-rt_int16_t wantspeed1 = 100;
-rt_int16_t wantspeed2 = - 100;
+rt_int16_t wantspeed1 = 0;
+rt_int16_t wantspeed2 = 0;
+
+rt_uint8_t localsurround[73];
 
 void master_thread_entry(void *parameter)
 {
     rt_uint32_t e;
     rt_uint8_t i;
     rt_uint32_t buf;
-    rt_int8_t fsignalL = 0;
-    rt_int8_t fsignalR = 0;
-    rt_int8_t bsignalL = 0;
-    rt_int8_t bsignalR = 0;
-    rt_int8_t lsignalL = 0;
-    rt_int8_t lsignalR = 0;
-    rt_int8_t rsignalL = 0;
-    rt_int8_t rsignalR = 0;
+    rt_int32_t fsignal = 0;
+
     while (1)
     {
         /* 接收事件 */
@@ -37,77 +33,47 @@ void master_thread_entry(void *parameter)
                 {
                     for (rt_uint16_t x = 0; x < around[i].number; x++)
                     {
-                        if (around[i].ap[x].distance <= 800)
+                        if (around[i].ap[x].distance <= 600)
                         {
-//                      rt_kprintf("warning circle:%d angle:%d distance:%d\n", i, ((rt_uint32_t)around[i].ap[x].angle) * 100 / 64, ((rt_uint32_t)around[i].ap[x].distance) / 4);
                             buf = (rt_uint32_t)around[i].ap[x].angle * 100 / 64 ;
-                            if (buf >= 31500 || buf < 4500)
+                            if ((buf > 32500) || (buf < 3500))
                             {
-                                if (buf >= 31500)
+                                if (buf > 32500)
                                 {
-                                    fsignalL++;
+                                    fsignal++;
                                 }
-                                else if (buf < 4500)
+                                else if (buf < 3500)
                                 {
-                                    fsignalR++;
-                                }
-                            }
-                            else if (buf >= 4500 && buf < 13500)
-                            {
-                                if (buf >= 4500)
-                                {
-                                    rsignalL++;
-                                }
-                                else if (buf < 13500)
-                                {
-                                    rsignalR++;
-                                }
-                            }
-                            else if (buf >= 13500 && buf < 22500)
-                            {
-                                if (buf >= 13500)
-                                {
-                                    bsignalL++;
-                                }
-                                else if (buf < 22500)
-                                {
-                                    bsignalR++;
-                                }
-                            }
-                            else if (buf >= 22500 && buf < 31500)
-                            {
-                                if (buf >= 22500)
-                                {
-                                    lsignalL++;
-                                }
-                                else if (buf < 31500)
-                                {
-                                    lsignalR++;
+                                    fsignal--;
                                 }
                             }
                         }
                     }
                 }
-                if ((fsignalL == 0) && (fsignalR == 0))
+                rt_kprintf("fsignal: %d .\n", fsignal);
+                if (fsignal != 0)
+                {
+                    if ((fsignal >= -10) && (fsignal <= 10))
+                    {
+                        carStop();
+                        ///////////////////////////////
+                        //先停车然后需要做一些更细致的判断.
+                        ///////////////////////////////
+                    }
+                    else if (fsignal > 10)
+                    {
+                        carRight();
+                    }
+                    else
+                    {
+                        carLeft();
+                    }
+                }
+                else
                 {
                     carForward();
                 }
-                else if (fsignalL > fsignalR)
-                {
-                    carRight();
-                }
-                else if (fsignalL <= fsignalR)
-                {
-                    carLeft();
-                }
-                fsignalL = 0;
-                fsignalR = 0;
-                bsignalL = 0;
-                bsignalR = 0;
-                lsignalL = 0;
-                lsignalR = 0;
-                rsignalL = 0;
-                rsignalR = 0;
+                fsignal = 0;
                 Eaix4Scaning();
             }
         }
@@ -123,20 +89,20 @@ int master_init()
     rt_thread_t tid;
 
     rt_kprintf("master_init.\n");
-	
+
     rt_event_init(&ControlEvent, "Control", RT_IPC_FLAG_FIFO);
-		rt_mutex_init(&SpeedMutex, "speed", RT_IPC_FLAG_FIFO);
-	
+    rt_mutex_init(&SpeedMutex, "speed", RT_IPC_FLAG_FIFO);
+
     eaix4_init();
     wireless_init();
     mpu9250_init();
-		speed_init();
+    speed_init();
     rt_kprintf("master_done.\n");
     /* 创建test线程 */
     tid = rt_thread_create("master",
                            master_thread_entry,
                            RT_NULL,
-                           4028,
+                           1024,
                            3,
                            20);
     /* 创建成功则启动线程 */
