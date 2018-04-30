@@ -418,7 +418,7 @@ int mpu9250_init(void)
     tid = rt_thread_create("mpu9250",
                            mpu9250_thread_entry,
                            RT_NULL,
-                           1024,
+                           2048,
                            5,
                            20);
     /* 创建成功则启动线程 */

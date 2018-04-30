@@ -13,15 +13,15 @@ struct rt_mutex SpeedMutex;
 rt_int16_t wantspeed1 = 0;
 rt_int16_t wantspeed2 = 0;
 
-rt_uint8_t localsurround[73];
-
 void master_thread_entry(void *parameter)
 {
-    rt_uint32_t e;
-    rt_uint8_t i;
-    rt_uint32_t buf;
-    rt_int32_t fsignal = 0;
-
+  rt_uint32_t e;
+  rt_uint8_t i;
+  rt_uint32_t buf;
+  rt_int32_t fsignal = 0;
+	rt_int32_t ffsignal = 0;
+  rt_int32_t swing;
+	
     while (1)
     {
         /* 接收事件 */
@@ -33,6 +33,8 @@ void master_thread_entry(void *parameter)
                 {
                     for (rt_uint16_t x = 0; x < around[i].number; x++)
                     {
+											if(around[i].ap[x].distance <= 1200)
+											{
                         if (around[i].ap[x].distance <= 600)
                         {
                             buf = (rt_uint32_t)around[i].ap[x].angle * 100 / 64 ;
@@ -48,14 +50,27 @@ void master_thread_entry(void *parameter)
                                 }
                             }
                         }
+												else
+												{
+                            buf = (rt_uint32_t)around[i].ap[x].angle * 100 / 64 ;
+														if (buf > 18000)
+														{
+																ffsignal++;
+														}
+														else if (buf < 18000)
+														{
+																ffsignal--;
+														}											
+												}
+											}
                     }
                 }
-                rt_kprintf("fsignal: %d .\n", fsignal);
                 if (fsignal != 0)
                 {
                     if ((fsignal >= -10) && (fsignal <= 10))
                     {
                         carStop();
+												swing++;
                         ///////////////////////////////
                         //先停车然后需要做一些更细致的判断.
                         ///////////////////////////////
@@ -63,17 +78,36 @@ void master_thread_entry(void *parameter)
                     else if (fsignal > 10)
                     {
                         carRight();
+                        swing++;
                     }
                     else
                     {
                         carLeft();
+                        swing++;
                     }
+										
+										if(swing>=4)
+										{
+											swing=0;
+											if (ffsignal > 10)
+											{
+													carRight();
+												rt_thread_delay(rt_tick_from_millisecond(200));
+											}
+											else
+											{
+													carLeft();
+												rt_thread_delay(rt_tick_from_millisecond(200));
+											}
+										}
                 }
                 else
                 {
+										swing=0;
                     carForward();
                 }
                 fsignal = 0;
+								ffsignal= 0;
                 Eaix4Scaning();
             }
         }
@@ -102,7 +136,7 @@ int master_init()
     tid = rt_thread_create("master",
                            master_thread_entry,
                            RT_NULL,
-                           1024,
+                           4096,
                            3,
                            20);
     /* 创建成功则启动线程 */
