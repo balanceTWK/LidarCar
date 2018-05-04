@@ -64,6 +64,12 @@ void speed_thread_entry(void *parameter)//PID¿ØÖÆ
         {
             xspeed1 = wantspeed1;
             xspeed2 = wantspeed2;
+            if ((xspeed1 == 0) && (xspeed2 == 0))
+            {
+                pwm1 = 0;
+                pwm2 = 0;
+                goto out;
+            }
         }
         diff1 = xspeed1 - speed1;
         diff2 = xspeed2 - speed2;
@@ -71,8 +77,9 @@ void speed_thread_entry(void *parameter)//PID¿ØÖÆ
         pwm2 = pwm2 + 6 * diff2 + 5 * (diff2 - Last_diff2);
         Last_diff1 = diff1;
         Last_diff2 = diff2;
+out:
         setpwm(pwm1, pwm2);
-//        rt_kprintf("count:%d speed1:%d , speed2:%d  ",i++, speed1, speed2);
+//        rt_kprintf("speed1:%d , speed2:%d  ",speed1, speed2);
 //              rt_kprintf("pwm1:%d , pwm2:%d \n", pwm1, pwm2);
         rt_thread_delay(rt_tick_from_millisecond(50));
     }

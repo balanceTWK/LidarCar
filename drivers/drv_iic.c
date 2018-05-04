@@ -28,7 +28,7 @@
 
 #include "drv_iic.h"
 
-//#define DEBUG
+#define DEBUG
 
 #ifdef DEBUG
 #define DEBUG_PRINTF(...)   rt_kprintf(__VA_ARGS__)

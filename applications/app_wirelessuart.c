@@ -103,7 +103,7 @@ void wireless_thread_entry(void *parameter)
     }
     while (1)
     {
-			rt_thread_delay(rt_tick_from_millisecond(20));
+			rt_thread_delay(rt_tick_from_millisecond(5000));
 //        EAI_X4_GetDate();
     }
 }

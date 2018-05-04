@@ -6,6 +6,7 @@
 #include "inv_mpu_dmp_motion_driver.h"
 #include "inv_mpu.h"
 #include "app_wirelessuart.h"
+#include "master_thread.h"
 
 #define MPU9250_I2CBUS_NAME  "i2c0"
 
@@ -375,7 +376,12 @@ void mpu9250_thread_entry(void *parameter)
     {
         if (mpu_mpl_get_data(&pitch, &roll, &yaw) == 0)
         {
-            usart1_report_imu((int)(roll * 100), (int)(pitch * 100), (int)(yaw * 100), 0, 0);
+						rt_mutex_take(&Mpu9250Mutex, RT_WAITING_FOREVER);
+						mypitch=pitch;
+						myroll=roll;
+						myyaw=yaw;
+//            usart1_report_imu((int)(roll * 100), (int)(pitch * 100), (int)(yaw * 100), 0, 0);
+						rt_mutex_release(&Mpu9250Mutex);
         }
         rt_thread_delay(rt_tick_from_millisecond(20));
     }

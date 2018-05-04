@@ -148,6 +148,10 @@ void eaix4cmd(int argc, char **argv)
         {
             Eaix4Health();
         }
+        else
+        {
+            rt_kprintf("ERROR command !\n");
+        }
     }
 }
 MSH_CMD_EXPORT(eaix4cmd, -s - fs - sc - fsc - gvf - ghs);

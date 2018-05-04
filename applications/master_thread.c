@@ -9,9 +9,12 @@
 
 struct rt_event ControlEvent;
 struct rt_mutex SpeedMutex;
+struct rt_mutex Mpu9250Mutex;
 
 rt_int16_t wantspeed1 = 0;
 rt_int16_t wantspeed2 = 0;
+
+volatile float mypitch, myroll, myyaw;
 
 void master_thread_entry(void *parameter)
 {
@@ -90,12 +93,16 @@ void master_thread_entry(void *parameter)
                         if (ffsignal > 0)
                         {
                             carRight();
-                            rt_thread_delay(rt_tick_from_millisecond(500));
+                            beep(1);
+                            rt_thread_delay(rt_tick_from_millisecond(2000));
+                            beep(0);
                         }
                         else
                         {
                             carLeft();
-                            rt_thread_delay(rt_tick_from_millisecond(500));
+                            beep(1);
+                            rt_thread_delay(rt_tick_from_millisecond(2000));
+                            beep(0);
                         }
                     }
                 }
@@ -124,6 +131,7 @@ int master_init()
 
     rt_event_init(&ControlEvent, "Control", RT_IPC_FLAG_FIFO);
     rt_mutex_init(&SpeedMutex, "speed", RT_IPC_FLAG_FIFO);
+    rt_mutex_init(&Mpu9250Mutex, "mpu9250", RT_IPC_FLAG_FIFO);
 
     eaix4_init();
     wireless_init();

@@ -8,6 +8,9 @@
 
 extern struct rt_event ControlEvent;
 extern struct rt_mutex SpeedMutex;
+extern struct rt_mutex Mpu9250Mutex;
+
+extern volatile float mypitch, myroll, myyaw;
 
 extern rt_int16_t wantspeed1;
 extern rt_int16_t wantspeed2;

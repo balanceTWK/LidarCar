@@ -103,6 +103,10 @@ void manipulationData()
                     around[circle - 1].firstpoint.angle = (package.fsa >> 1);
                     around[circle - 1].firstpoint.distance = package.buf[0];
                 }
+								else
+								{
+									break;
+								}
             }
         }
     }

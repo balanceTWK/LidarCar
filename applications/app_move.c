@@ -45,15 +45,19 @@ void carStop()
 {
     wantspeed1 = 0;
     wantspeed2 = 0;
+		rt_pin_write(motor_in_1, PIN_HIGH);
+		rt_pin_write(motor_in_2, PIN_HIGH);		
+		rt_pin_write(motor_in_3, PIN_HIGH);
+		rt_pin_write(motor_in_4, PIN_HIGH);	
     rt_mutex_release(&SpeedMutex);
 }
 
 void carMove(int argc, char **argv)
 {
-    rt_kprintf("%s is runed!\n", argv[0]);
+//    rt_kprintf("%s is runing!\n", argv[0]);
     if (argc > 1)
     {
-        rt_kprintf("argv[1]: %s\n", argv[1]);
+//        rt_kprintf("argv[1]: %s\n", argv[1]);
         if (!rt_strcmp(argv[1], forward))
         {
             rt_kprintf("forward\n");
@@ -78,6 +82,10 @@ void carMove(int argc, char **argv)
         {
             rt_kprintf("stop\n");
             carStop();
+        }
+        else
+        {
+            rt_kprintf("ERROR command !\n");
         }
     }
 }
