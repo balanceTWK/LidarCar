@@ -6,6 +6,8 @@
 #include "EAI_X4.h"
 #include "app_move.h"
 #include "app_speed.h"
+#include "arm_math.h"
+//#include "math.h"
 
 struct rt_event ControlEvent;
 struct rt_mutex SpeedMutex;
@@ -16,14 +18,19 @@ rt_int16_t wantspeed2 = 0;
 
 volatile float mypitch, myroll, myyaw;
 
+rt_uint8_t map[200][200];
+
+#define ORIGINX 100
+#define ORIGINY 100
+
+#define ANGLE(x) (float32_t)((x)*2*PI/23040)
+
 void master_thread_entry(void *parameter)
 {
     rt_uint32_t e;
     rt_uint8_t i;
-    rt_uint32_t buf;
-    rt_int32_t fsignal = 0;
-    rt_int32_t ffsignal = 0;
-    rt_int32_t swing;
+    float32_t sinx, cosx;
+    rt_int32_t lx, ly;
 
     while (1)
     {
@@ -32,87 +39,36 @@ void master_thread_entry(void *parameter)
         {
             if (e & controlEventEaix4)
             {
+                for (rt_uint16_t x = 0; x < 200; x++)
+                {
+                    for (rt_uint16_t y = 0; y < 200; y++)
+                    {
+											if(map[x][y]>50)
+											{
+												printf(" >50 map[%d][%d]: value:%d \r\n",x-100,y-100,map[x][y]);
+											}
+											map[x][y] = 0;
+                    }
+                }
                 for (i = 1; i < 5; i++)
                 {
                     for (rt_uint16_t x = 0; x < around[i].number; x++)
                     {
-                        if (around[i].ap[x].distance <= 1200)
+                        sinx = arm_sin_f32((float32_t)ANGLE(around[i].ap[x].angle));
+                        cosx = arm_cos_f32((float32_t)ANGLE(around[i].ap[x].angle));
+                        lx = sinx * around[i].ap[x].distance;
+                        ly = cosx * around[i].ap[x].distance;
+                        lx = lx / 400;
+                        ly = ly / 400;
+                        if ((lx >= -100) && (lx <= 100) && (ly >= -100) && (ly <= 100))
                         {
-                            if (around[i].ap[x].distance <= 600)
-                            {
-                                buf = (rt_uint32_t)around[i].ap[x].angle * 100 / 64 ;
-                                if ((buf > 32500) || (buf < 3500))
-                                {
-                                    if (buf > 32500)
-                                    {
-                                        fsignal++;
-                                    }
-                                    else if (buf < 3500)
-                                    {
-                                        fsignal--;
-                                    }
-                                }
-                            }
-                            else
-                            {
-                                buf = (rt_uint32_t)around[i].ap[x].angle * 100 / 64 ;
-                                if (buf > 18000)
-                                {
-                                    ffsignal++;
-                                }
-                                else if (buf < 18000)
-                                {
-                                    ffsignal--;
-                                }
-                            }
+                            map[ORIGINX + lx][ORIGINY + ly]++;
                         }
                     }
                 }
-                if (fsignal != 0)
-                {
-                    if ((fsignal >= -10) && (fsignal <= 10))
-                    {
-                        carStop();
-                        swing++;
-                    }
-                    else if (fsignal > 10)
-                    {
-                        carRight();
-                        swing++;
-                    }
-                    else
-                    {
-                        carLeft();
-                        swing++;
-                    }
-
-                    if (swing >= 4)
-                    {
-                        swing = 0;
-                        ffsignal += fsignal;
-                        if (ffsignal > 0)
-                        {
-                            carRight();
-                            beep(1);
-                            rt_thread_delay(rt_tick_from_millisecond(2000));
-                            beep(0);
-                        }
-                        else
-                        {
-                            carLeft();
-                            beep(1);
-                            rt_thread_delay(rt_tick_from_millisecond(2000));
-                            beep(0);
-                        }
-                    }
-                }
-                else
-                {
-                    swing = 0;
-                    carForward();
-                }
-                fsignal = 0;
-                ffsignal = 0;
+                beep(1);
+                rt_thread_delay(rt_tick_from_millisecond(50));
+                beep(0);
                 Eaix4Scaning();
             }
         }
