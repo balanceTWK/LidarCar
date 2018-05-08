@@ -9,11 +9,15 @@
 extern struct rt_event ControlEvent;
 extern struct rt_mutex SpeedMutex;
 extern struct rt_mutex Mpu9250Mutex;
+extern struct rt_mutex StatusMutex;
+extern struct rt_mutex DistanceMutex;
 
 extern volatile float mypitch, myroll, myyaw;
 
-extern rt_int16_t wantspeed1;
-extern rt_int16_t wantspeed2;
+extern volatile rt_int16_t wantspeed1;
+extern volatile rt_int16_t wantspeed2;
+extern volatile rt_uint32_t distance;
+extern volatile rt_uint32_t CarStatus;
 
 typedef struct
 {

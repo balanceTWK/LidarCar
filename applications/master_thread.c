@@ -7,14 +7,18 @@
 #include "app_move.h"
 #include "app_speed.h"
 #include "arm_math.h"
-//#include "math.h"
 
 struct rt_event ControlEvent;
-struct rt_mutex SpeedMutex;
-struct rt_mutex Mpu9250Mutex;
 
-rt_int16_t wantspeed1 = 0;
-rt_int16_t wantspeed2 = 0;
+struct rt_mutex SpeedMutex;//小车速度
+struct rt_mutex Mpu9250Mutex;//小车3轴姿态
+struct rt_mutex StatusMutex;//小车状态
+struct rt_mutex DistanceMutex;//累计小车前进距离.
+
+volatile rt_uint32_t CarStatus = 0;
+volatile rt_int16_t wantspeed1 = 0;
+volatile rt_int16_t wantspeed2 = 0;
+volatile rt_uint32_t distance = 0;
 
 volatile float mypitch, myroll, myyaw;
 
@@ -32,6 +36,11 @@ void master_thread_entry(void *parameter)
     float32_t sinx, cosx;
     rt_int32_t lx, ly;
 
+    rt_int16_t locax, locay;
+
+    rt_uint32_t zeroanglecount = 0;
+    rt_uint32_t zeroangledistance = 0;
+
     while (1)
     {
         /* 接收事件 */
@@ -39,15 +48,37 @@ void master_thread_entry(void *parameter)
         {
             if (e & controlEventEaix4)
             {
+							if(!(CarStatus&0x00000008))//测前方距离模式,第4位为1.
+							{
+                for (i = 1; i < 5; i++)
+                {
+                    for (rt_uint16_t x = 0; x < around[i].number; x++)
+                    {
+                        if (around[i].ap[x].angle <= 64)
+                        {
+                            zeroanglecount++;
+                            zeroangledistance += around[i].ap[x].distance;
+//                            printf("angle[%d]: distance:%d \r\n",around[i].ap[x].angle,around[i].ap[x].distance);
+                        }
+                    }
+                }
+                printf("count:%ld distance:%ld \r\n",zeroanglecount,zeroangledistance/(zeroanglecount*4));
+                zeroanglecount = 0;
+                zeroangledistance = 0;	
+								Eaix4Scaning();
+							}
+							else//刷新一次地图
+							{
+								CarStatus&=0xFFFFFFF7;//第4位清零
                 for (rt_uint16_t x = 0; x < 200; x++)
                 {
                     for (rt_uint16_t y = 0; y < 200; y++)
                     {
-											if(map[x][y]>50)
-											{
-												printf(" >50 map[%d][%d]: value:%d \r\n",x-100,y-100,map[x][y]);
-											}
-											map[x][y] = 0;
+                      if(map[x][y]>50)
+                      {
+                          printf(" >50 map[%d][%d]: value:%d \r\n",x-100,y-100,map[x][y]);
+                      }
+                      map[x][y] = 0;
                     }
                 }
                 for (i = 1; i < 5; i++)
@@ -66,10 +97,10 @@ void master_thread_entry(void *parameter)
                         }
                     }
                 }
-                beep(1);
-                rt_thread_delay(rt_tick_from_millisecond(50));
-                beep(0);
-                Eaix4Scaning();
+							}
+							beep(1);
+							rt_thread_delay(rt_tick_from_millisecond(50));
+							beep(0);
             }
         }
         else
@@ -86,8 +117,11 @@ int master_init()
     rt_kprintf("master_init.\n");
 
     rt_event_init(&ControlEvent, "Control", RT_IPC_FLAG_FIFO);
+
     rt_mutex_init(&SpeedMutex, "speed", RT_IPC_FLAG_FIFO);
     rt_mutex_init(&Mpu9250Mutex, "mpu9250", RT_IPC_FLAG_FIFO);
+    rt_mutex_init(&StatusMutex, "Status", RT_IPC_FLAG_FIFO);
+    rt_mutex_init(&DistanceMutex, "distance", RT_IPC_FLAG_FIFO);
 
     eaix4_init();
     wireless_init();

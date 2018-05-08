@@ -420,6 +420,11 @@
               <FileType>1</FileType>
               <FilePath>.\applications\app_speed.c</FilePath>
             </File>
+            <File>
+              <FileName>app_command.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\applications\app_command.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>

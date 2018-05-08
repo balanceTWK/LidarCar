@@ -53,6 +53,8 @@ void speed_thread_entry(void *parameter)//PIDøÿ÷∆
 
     rt_int16_t pwm1 = 0;
     rt_int16_t pwm2 = 0;
+	
+		rt_uint8_t s;
     //////////////////////
 //      carForward();//≤‚ ‘
     //////////////////////
@@ -79,6 +81,16 @@ void speed_thread_entry(void *parameter)//PIDøÿ÷∆
         Last_diff2 = diff2;
 out:
         setpwm(pwm1, pwm2);
+				rt_mutex_take(&StatusMutex, RT_WAITING_FOREVER);
+				s=CarStatus&0x00000007;
+				rt_mutex_release(&StatusMutex);
+				if((s==1)||(s==2))
+				{
+					rt_mutex_take(&DistanceMutex, RT_WAITING_FOREVER);
+					distance+=(speed1+speed2)/2;
+					rt_mutex_release(&DistanceMutex);
+				}
+				
 //        rt_kprintf("speed1:%d , speed2:%d  ",speed1, speed2);
 //              rt_kprintf("pwm1:%d , pwm2:%d \n", pwm1, pwm2);
         rt_thread_delay(rt_tick_from_millisecond(50));
