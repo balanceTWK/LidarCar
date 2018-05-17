@@ -5,6 +5,9 @@
 #include <rthw.h>
 
 #define controlEventEaix4 (1 << 0)
+#define control1 (1 << 1)
+#define control2 (1 << 2)
+#define control3 (1 << 3)
 
 extern struct rt_event ControlEvent;
 extern struct rt_mutex SpeedMutex;

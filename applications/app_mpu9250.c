@@ -380,6 +380,7 @@ void mpu9250_thread_entry(void *parameter)
 						mypitch=pitch;
 						myroll=roll;
 						myyaw=yaw;
+					  printf("myyaw:%f \r\n",myyaw);
 //            usart1_report_imu((int)(roll * 100), (int)(pitch * 100), (int)(yaw * 100), 0, 0);
 						rt_mutex_release(&Mpu9250Mutex);
         }
@@ -425,7 +426,7 @@ int mpu9250_init(void)
                            mpu9250_thread_entry,
                            RT_NULL,
                            2048,
-                           5,
+                           3,
                            20);
     /* 创建成功则启动线程 */
     if (tid != RT_NULL)

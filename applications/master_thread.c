@@ -21,6 +21,7 @@ volatile rt_int16_t wantspeed2 = 0;
 volatile rt_uint32_t distance = 0;
 
 volatile float mypitch, myroll, myyaw;
+volatile float savemypitch, savemyroll, savemyyaw,nowmyyaw;
 
 rt_uint8_t map[200][200];
 
@@ -36,11 +37,13 @@ void master_thread_entry(void *parameter)
     float32_t sinx, cosx;
     rt_int32_t lx, ly;
 
-    rt_int16_t locax, locay;
+    rt_uint8_t Fsigner = 0;
+    rt_uint8_t Lsigner = 0;
+    rt_uint8_t Rsigner = 0;
+    rt_uint8_t Bsigner = 0;
 
-    rt_uint32_t zeroanglecount = 0;
-    rt_uint32_t zeroangledistance = 0;
-
+    rt_uint8_t obstruction = 0xff;
+		printf("\n hello world!\r\n");
     while (1)
     {
         /* 接收事件 */
@@ -48,37 +51,11 @@ void master_thread_entry(void *parameter)
         {
             if (e & controlEventEaix4)
             {
-							if(!(CarStatus&0x00000008))//测前方距离模式,第4位为1.
-							{
-                for (i = 1; i < 5; i++)
-                {
-                    for (rt_uint16_t x = 0; x < around[i].number; x++)
-                    {
-                        if (around[i].ap[x].angle <= 64)
-                        {
-                            zeroanglecount++;
-                            zeroangledistance += around[i].ap[x].distance;
-//                            printf("angle[%d]: distance:%d \r\n",around[i].ap[x].angle,around[i].ap[x].distance);
-                        }
-                    }
-                }
-                printf("count:%ld distance:%ld \r\n",zeroanglecount,zeroangledistance/(zeroanglecount*4));
-                zeroanglecount = 0;
-                zeroangledistance = 0;	
-								Eaix4Scaning();
-							}
-							else//刷新一次地图
-							{
-								CarStatus&=0xFFFFFFF7;//第4位清零
                 for (rt_uint16_t x = 0; x < 200; x++)
                 {
                     for (rt_uint16_t y = 0; y < 200; y++)
                     {
-                      if(map[x][y]>50)
-                      {
-                          printf(" >50 map[%d][%d]: value:%d \r\n",x-100,y-100,map[x][y]);
-                      }
-                      map[x][y] = 0;
+                        map[x][y] = 0;
                     }
                 }
                 for (i = 1; i < 5; i++)
@@ -91,16 +68,107 @@ void master_thread_entry(void *parameter)
                         ly = cosx * around[i].ap[x].distance;
                         lx = lx / 400;
                         ly = ly / 400;
-                        if ((lx >= -100) && (lx <= 100) && (ly >= -100) && (ly <= 100))
+                        if ((lx >= -100) && (lx < 100) && (ly >= -100) && (ly < 100))
                         {
                             map[ORIGINX + lx][ORIGINY + ly]++;
                         }
                     }
                 }
-							}
-							beep(1);
-							rt_thread_delay(rt_tick_from_millisecond(50));
-							beep(0);
+                for (rt_uint16_t x = 0; x < 100; x++)
+                {
+                    if (((map[ORIGINX + 0][ORIGINY + x] <= 4) || (map[ORIGINX + 1][ORIGINY + x] <= 4) || (map[ORIGINX - 1][ORIGINY + x] <= 4)) && (obstruction & 0x01))
+                    {
+                        Fsigner++;
+                    }
+                    else
+                    {
+                        obstruction &= 0xFE;
+                    }
+
+                    if (((map[ORIGINX + 0][ORIGINY - x] <= 4) || (map[ORIGINX + 1][ORIGINY - x] <= 4) || (map[ORIGINX - 1][ORIGINY - x] <= 4)) && (obstruction & 0x02))
+                    {
+                        Bsigner++;
+                    }
+                    else
+                    {
+                        obstruction &= 0xFD;
+                    }
+
+                    if (((map[ORIGINX + x][ORIGINY + 0] <= 4) || (map[ORIGINX + x][ORIGINY + 1] <= 4) || (map[ORIGINX + x][ORIGINY - 1] <= 4)) && (obstruction & 0x04))
+                    {
+                        Rsigner++;
+                    }
+                    else
+                    {
+                        obstruction &= 0xFB;
+                    }
+
+                    if (((map[ORIGINX - x][ORIGINY + 0] <= 4) || (map[ORIGINX - x][ORIGINY + 1] <= 4) || (map[ORIGINX - x][ORIGINY - 1] <= 4)) && (obstruction & 0x08))
+                    {
+                        Lsigner++;
+                    }
+                    else
+                    {
+                        obstruction &= 0xF7;
+                    }
+
+                    if (obstruction == 0xF0)
+                    {
+                        break;
+                    }
+                }
+                if (Fsigner <= 1)
+                {
+                    if (Rsigner <= Lsigner)
+                    {
+                        carLeft();
+                        rt_mutex_take(&Mpu9250Mutex, RT_WAITING_FOREVER);
+                        savemyyaw = myyaw;
+                        rt_mutex_release(&Mpu9250Mutex);
+                        while (1)
+                        {
+                            rt_mutex_take(&Mpu9250Mutex, RT_WAITING_FOREVER);
+														nowmyyaw=myyaw;
+                            rt_mutex_release(&Mpu9250Mutex);
+  													if ((savemyyaw - nowmyyaw) > 36)
+                            {
+                                carStop();
+                                break;
+                            }
+                            rt_thread_delay(rt_tick_from_millisecond(20));
+                        }
+                    }
+                    else
+                    {
+                        carRight();
+                        rt_mutex_take(&Mpu9250Mutex, RT_WAITING_FOREVER);
+                        savemyyaw = myyaw;
+                        rt_mutex_release(&Mpu9250Mutex);
+                        while (1)
+                        {
+                            rt_mutex_take(&Mpu9250Mutex, RT_WAITING_FOREVER);
+														nowmyyaw=myyaw;
+                            rt_mutex_release(&Mpu9250Mutex);
+                            if ((nowmyyaw - savemyyaw) > 36)
+                            {
+                                carStop();
+                                break;
+                            }
+                            rt_thread_delay(rt_tick_from_millisecond(20));
+                        }										
+                    }
+                }
+                else
+                {
+                    carForward();
+                }
+                Fsigner = 0;
+                Bsigner = 0;
+                Lsigner = 0;
+                Rsigner = 0;
+                obstruction = 0xFF;
+
+                Eaix4Scaning();
             }
         }
         else
