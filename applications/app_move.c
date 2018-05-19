@@ -13,23 +13,10 @@
 #define right   "-r"
 #define stop    "-s"
 
-/* 取后3位
-*
-* 1 : 前进
-* 2 : 后退
-* 3 : 左转
-* 4 : 右转
-* 5 : 停止
-*/
-
 void carForward()
 {
     wantspeed1 = 80;
     wantspeed2 = 80;
-		rt_mutex_take(&StatusMutex, RT_WAITING_FOREVER);
-		CarStatus &=0xFFFFFFF8;
-		CarStatus |= 0x00000001;
-		rt_mutex_release(&StatusMutex);
     rt_mutex_release(&SpeedMutex);
 }
 
@@ -37,10 +24,6 @@ void carBack()
 {
     wantspeed1 = -80;
     wantspeed2 = -80;
-		rt_mutex_take(&StatusMutex, RT_WAITING_FOREVER);
-		CarStatus &=0xFFFFFFF8;
-		CarStatus |= 0x00000002;
-		rt_mutex_release(&StatusMutex);
     rt_mutex_release(&SpeedMutex);
 }
 
@@ -48,10 +31,6 @@ void carLeft()
 {
     wantspeed1 = -80;
     wantspeed2 = 80;
-		rt_mutex_take(&StatusMutex, RT_WAITING_FOREVER);
-		CarStatus &=0xFFFFFFF8;
-		CarStatus |= 0x00000003;
-		rt_mutex_release(&StatusMutex);
     rt_mutex_release(&SpeedMutex);
 }
 
@@ -59,10 +38,6 @@ void carRight()
 {
     wantspeed1 = 80;
     wantspeed2 = -80;
-		rt_mutex_take(&StatusMutex, RT_WAITING_FOREVER);
-		CarStatus &=0xFFFFFFF8;
-		CarStatus |= 0x00000004;
-		rt_mutex_release(&StatusMutex);
     rt_mutex_release(&SpeedMutex);
 }
 
@@ -74,10 +49,6 @@ void carStop()
 		rt_pin_write(motor_in_2, PIN_HIGH);		
 		rt_pin_write(motor_in_3, PIN_HIGH);
 		rt_pin_write(motor_in_4, PIN_HIGH);	
-		rt_mutex_take(&StatusMutex, RT_WAITING_FOREVER);
-		CarStatus &=0xFFFFFFF8;
-		CarStatus |= 0x00000005;
-		rt_mutex_release(&StatusMutex);
     rt_mutex_release(&SpeedMutex);
 }
 

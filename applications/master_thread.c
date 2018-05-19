@@ -6,44 +6,25 @@
 #include "EAI_X4.h"
 #include "app_move.h"
 #include "app_speed.h"
-#include "arm_math.h"
 
 struct rt_event ControlEvent;
+struct rt_mutex SpeedMutex;
+struct rt_mutex Mpu9250Mutex;
 
-struct rt_mutex SpeedMutex;//小车速度
-struct rt_mutex Mpu9250Mutex;//小车3轴姿态
-struct rt_mutex StatusMutex;//小车状态
-struct rt_mutex DistanceMutex;//累计小车前进距离.
-
-volatile rt_uint32_t CarStatus = 0;
-volatile rt_int16_t wantspeed1 = 0;
-volatile rt_int16_t wantspeed2 = 0;
-volatile rt_uint32_t distance = 0;
+rt_int16_t wantspeed1 = 0;
+rt_int16_t wantspeed2 = 0;
 
 volatile float mypitch, myroll, myyaw;
-volatile float savemypitch, savemyroll, savemyyaw,nowmyyaw;
-
-rt_uint8_t map[200][200];
-
-#define ORIGINX 100
-#define ORIGINY 100
-
-#define ANGLE(x) (float32_t)((x)*2*PI/23040)
 
 void master_thread_entry(void *parameter)
 {
     rt_uint32_t e;
     rt_uint8_t i;
-    float32_t sinx, cosx;
-    rt_int32_t lx, ly;
+    rt_uint32_t buf;
+    rt_int32_t fsignal = 0;
+    rt_int32_t ffsignal = 0;
+    rt_int32_t swing;
 
-    rt_uint8_t Fsigner = 0;
-    rt_uint8_t Lsigner = 0;
-    rt_uint8_t Rsigner = 0;
-    rt_uint8_t Bsigner = 0;
-
-    rt_uint8_t obstruction = 0xff;
-		printf("\n hello world!\r\n");
     while (1)
     {
         /* 接收事件 */
@@ -51,123 +32,87 @@ void master_thread_entry(void *parameter)
         {
             if (e & controlEventEaix4)
             {
-                for (rt_uint16_t x = 0; x < 200; x++)
-                {
-                    for (rt_uint16_t y = 0; y < 200; y++)
-                    {
-                        map[x][y] = 0;
-                    }
-                }
                 for (i = 1; i < 5; i++)
                 {
                     for (rt_uint16_t x = 0; x < around[i].number; x++)
                     {
-                        sinx = arm_sin_f32((float32_t)ANGLE(around[i].ap[x].angle));
-                        cosx = arm_cos_f32((float32_t)ANGLE(around[i].ap[x].angle));
-                        lx = sinx * around[i].ap[x].distance;
-                        ly = cosx * around[i].ap[x].distance;
-                        lx = lx / 400;
-                        ly = ly / 400;
-                        if ((lx >= -100) && (lx < 100) && (ly >= -100) && (ly < 100))
+                        if (around[i].ap[x].distance <= 1200)
                         {
-                            map[ORIGINX + lx][ORIGINY + ly]++;
-                        }
-                    }
-                }
-                for (rt_uint16_t x = 0; x < 100; x++)
-                {
-                    if (((map[ORIGINX + 0][ORIGINY + x] <= 4) || (map[ORIGINX + 1][ORIGINY + x] <= 4) || (map[ORIGINX - 1][ORIGINY + x] <= 4)) && (obstruction & 0x01))
-                    {
-                        Fsigner++;
-                    }
-                    else
-                    {
-                        obstruction &= 0xFE;
-                    }
-
-                    if (((map[ORIGINX + 0][ORIGINY - x] <= 4) || (map[ORIGINX + 1][ORIGINY - x] <= 4) || (map[ORIGINX - 1][ORIGINY - x] <= 4)) && (obstruction & 0x02))
-                    {
-                        Bsigner++;
-                    }
-                    else
-                    {
-                        obstruction &= 0xFD;
-                    }
-
-                    if (((map[ORIGINX + x][ORIGINY + 0] <= 4) || (map[ORIGINX + x][ORIGINY + 1] <= 4) || (map[ORIGINX + x][ORIGINY - 1] <= 4)) && (obstruction & 0x04))
-                    {
-                        Rsigner++;
-                    }
-                    else
-                    {
-                        obstruction &= 0xFB;
-                    }
-
-                    if (((map[ORIGINX - x][ORIGINY + 0] <= 4) || (map[ORIGINX - x][ORIGINY + 1] <= 4) || (map[ORIGINX - x][ORIGINY - 1] <= 4)) && (obstruction & 0x08))
-                    {
-                        Lsigner++;
-                    }
-                    else
-                    {
-                        obstruction &= 0xF7;
-                    }
-
-                    if (obstruction == 0xF0)
-                    {
-                        break;
-                    }
-                }
-                if (Fsigner <= 1)
-                {
-                    if (Rsigner <= Lsigner)
-                    {
-                        carLeft();
-                        rt_mutex_take(&Mpu9250Mutex, RT_WAITING_FOREVER);
-                        savemyyaw = myyaw;
-                        rt_mutex_release(&Mpu9250Mutex);
-                        while (1)
-                        {
-                            rt_mutex_take(&Mpu9250Mutex, RT_WAITING_FOREVER);
-														nowmyyaw=myyaw;
-                            rt_mutex_release(&Mpu9250Mutex);
-  													if ((savemyyaw - nowmyyaw) > 36)
+                            if (around[i].ap[x].distance <= 600)
                             {
-                                carStop();
-                                break;
+                                buf = (rt_uint32_t)around[i].ap[x].angle * 100 / 64 ;
+                                if ((buf > 32500) || (buf < 3500))
+                                {
+                                    if (buf > 32500)
+                                    {
+                                        fsignal++;
+                                    }
+                                    else if (buf < 3500)
+                                    {
+                                        fsignal--;
+                                    }
+                                }
                             }
-                            rt_thread_delay(rt_tick_from_millisecond(20));
+                            else
+                            {
+                                buf = (rt_uint32_t)around[i].ap[x].angle * 100 / 64 ;
+                                if (buf > 18000)
+                                {
+                                    ffsignal++;
+                                }
+                                else if (buf < 18000)
+                                {
+                                    ffsignal--;
+                                }
+                            }
                         }
                     }
-                    else
+                }
+                if (fsignal != 0)
+                {
+                    if ((fsignal >= -10) && (fsignal <= 10))
+                    {
+                        carStop();
+                        swing++;
+                    }
+                    else if (fsignal > 10)
                     {
                         carRight();
-                        rt_mutex_take(&Mpu9250Mutex, RT_WAITING_FOREVER);
-                        savemyyaw = myyaw;
-                        rt_mutex_release(&Mpu9250Mutex);
-                        while (1)
+                        swing++;
+                    }
+                    else
+                    {
+                        carLeft();
+                        swing++;
+                    }
+
+                    if (swing >= 4)
+                    {
+                        swing = 0;
+                        ffsignal += fsignal;
+                        if (ffsignal > 0)
                         {
-                            rt_mutex_take(&Mpu9250Mutex, RT_WAITING_FOREVER);
-														nowmyyaw=myyaw;
-                            rt_mutex_release(&Mpu9250Mutex);
-                            if ((nowmyyaw - savemyyaw) > 36)
-                            {
-                                carStop();
-                                break;
-                            }
-                            rt_thread_delay(rt_tick_from_millisecond(20));
-                        }										
+                            carRight();
+                            beep(1);
+                            rt_thread_delay(rt_tick_from_millisecond(2000));
+                            beep(0);
+                        }
+                        else
+                        {
+                            carLeft();
+                            beep(1);
+                            rt_thread_delay(rt_tick_from_millisecond(2000));
+                            beep(0);
+                        }
                     }
                 }
                 else
                 {
+                    swing = 0;
                     carForward();
                 }
-                Fsigner = 0;
-                Bsigner = 0;
-                Lsigner = 0;
-                Rsigner = 0;
-                obstruction = 0xFF;
-
+                fsignal = 0;
+                ffsignal = 0;
                 Eaix4Scaning();
             }
         }
@@ -185,11 +130,8 @@ int master_init()
     rt_kprintf("master_init.\n");
 
     rt_event_init(&ControlEvent, "Control", RT_IPC_FLAG_FIFO);
-
     rt_mutex_init(&SpeedMutex, "speed", RT_IPC_FLAG_FIFO);
     rt_mutex_init(&Mpu9250Mutex, "mpu9250", RT_IPC_FLAG_FIFO);
-    rt_mutex_init(&StatusMutex, "Status", RT_IPC_FLAG_FIFO);
-    rt_mutex_init(&DistanceMutex, "distance", RT_IPC_FLAG_FIFO);
 
     eaix4_init();
     wireless_init();

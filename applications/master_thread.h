@@ -5,22 +5,15 @@
 #include <rthw.h>
 
 #define controlEventEaix4 (1 << 0)
-#define control1 (1 << 1)
-#define control2 (1 << 2)
-#define control3 (1 << 3)
 
 extern struct rt_event ControlEvent;
 extern struct rt_mutex SpeedMutex;
 extern struct rt_mutex Mpu9250Mutex;
-extern struct rt_mutex StatusMutex;
-extern struct rt_mutex DistanceMutex;
 
 extern volatile float mypitch, myroll, myyaw;
 
-extern volatile rt_int16_t wantspeed1;
-extern volatile rt_int16_t wantspeed2;
-extern volatile rt_uint32_t distance;
-extern volatile rt_uint32_t CarStatus;
+extern rt_int16_t wantspeed1;
+extern rt_int16_t wantspeed2;
 
 typedef struct
 {
