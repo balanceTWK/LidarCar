@@ -16,8 +16,6 @@ rt_int16_t wantspeed2 = 0;
 
 volatile float mypitch, myroll, myyaw;
 
-rt_uint8_t map[100][100];
-
 void master_thread_entry(void *parameter)
 {
     rt_uint32_t e;
