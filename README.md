@@ -1,61 +1,73 @@
 # 激光雷达避障小车 #
-声明：本作品为 来一颗糖 原创。
 
-## 背景描述 ##
-由于在学校里很少有机会让我将所学的东西付诸于实践.有时候学完一个东西没法真正了解自己是否掌握,同时为了进一步提高自己的能力,不再漫无目的的学习.所以决定做这样一辆小车.其中PCB原理图和初版PCB_layout是我在寒假在家中完成的,程序是基于rt-thread[BSP]stm32f429-Apollo写的.历时3个多月.这辆小车很多地方可以说是边学边做的,尤其是有关于rt-thread方面的知识.在学习 rt-thread 期间受到了很多RTT社区里的人的帮助.要特别感谢下RTT开源社区.
+## 背景 ##
 
-## RT-Thread起到的作用 ##
-作为主控芯片的实时系统,提供多线程编程.小车的每个重要的需要实时的功能都单独作为一个线程.如小车的mpu9250姿态解算出姿态角（Roll、Pitch、Yaw ）的过程就单独使用了一个线程(mpu9250),小车的PID控制速度的代码也单独使用了一个线程(speed).每个功能线程(mpu9250,speed...等)都会处理完各自的数据得出结果,并且这些结果在必要的时候提供给主线程(master)使用.也正是因为rt-thread的优先级全抢占式调度使得重要的线程能及时处理完.另外rt-thread提供的finsh/msh在调试期间起到了很大的作用,同时也可以通过远程蓝牙串口控制小车的行为.
-## 实物图 ##
-![](https://i.imgur.com/QMd45fV.jpg)
-![](https://i.imgur.com/5vmUJ0z.jpg)
-![](https://i.imgur.com/Y4PIY6w.jpg)
+在做这辆小车之前，正值我大学学习生涯的迷茫期。有关嵌入式的学习，我基本是自学的。自学最大的坏处就是，没有一个系统的学习提纲，你无法充分了解你学习的进度、水平以及未来的方向。你可能会因为一个小成果而觉得自己可以了，也可能会突然有一天遇到一个专业知识更强的同龄人，而自我否定。为了能够接触到新知识，巩固以前所学，我决定做这样一辆小车。
+## 选择操作系统 ##
 
-- 主控芯片:STM32F429IGT6
-- 其它主要配件:激光雷达,蓝牙串口,无线射频模块,MPU9250九轴姿态模块,电机驱动芯片l298n.两个自带AB相编码器的电机.履带一对.
-- 编译环境:MDK525
-- RT-Thread版本:3.0.2
+在这之前我只学过 UCOS，但是 ucos 商用并不免费，一直耿耿于怀。所以趁着这次机会本着学习的目的我选择了 RT-Thread。期间也有考虑过 freertos 等其他实时操作系统但最终还是选择了 RT-Thrad 。原因如下：
+ 1. 代码开源，在 GitHub 可以下载到最新的源码。[GitHub地址](https://github.com/RT-Thread/rt-thread.git)
+ 2. 免费。（商用也免费，遵循 Apache License 2.0 协议）
+ 3. 组件丰富。[RT-Thread 软件包介绍](https://www.rt-thread.org/document/site/submodules/README/)
+ 4. 国产，社区这方面的问答支援比较好。[官方社区链接](https://www.rt-thread.org/qa/forum.php)
 
-## 硬件设计 ##
-![](https://i.imgur.com/5kIVzkE.png)
+## 准备阶段 ##
 
+ 1. 从 GitHub 下载 RT-Thread 源码。
+ 2. 激光雷达，作为学生党买淘宝上最便宜。（当初买的时候最便宜的一款也要 499 QAQ，现在好像便宜点了）
+ 3. PCB的绘制，或者使用最小系统板外加模块。
 
-1. 激光雷达通过串口通讯,以及pwm控制转速.
-2. 射频模块通过uart6通信.使用rt-thread的事件通知消息的到来.
-3. 蓝牙串口,作为msh终端的输出.方便调试.
-4. mpu9250模块通过i2c通信.
-5. ![](https://i.imgur.com/KT9gh5y.png)
-6. ![](https://i.imgur.com/QTtxEFG.png)
+ ## 使用现成的 bsp 工程 ##
 
+ ![bsp](./picture/bsp选择.png)
 
-## 软件设计 ##
-![](https://i.imgur.com/v9nbnVR.png)
+ 我选择的是 stm32f429-apollo 因为手头正好有正点原子 F429 的开发板，有好多驱动稍加修改甚至不修改直接就可以用了。
 
-1. master线程负责创建其它子线程,以及处理各种子线程处理后的信息.
-2. eaix4线程控制激光雷达上传到消息队列里的消息,将激光雷达的版本信息,状态,以及扫描数据解析出来.
-3. mpu9250线程通过dmp姿态解算出 姿态角（Roll、Pitch、Yaw ）.
-4. speed线程通过采集stm429自带的编码器以及pwm输出,PID控制电机转速.
+## 硬件部分 ##
 
-## 几个主要的命令 ##
+### 1.主控芯片 ###
 
-| 命令| 功能                   |
-| ---------- | ---------------------------- |
-|eaix4cmd -gvf   | 输出激光雷达版本信息.|
-|eaix4cmd -sc    | 小车开始扫描,启动避障功能.|
-|eaix4cmd -s     | 激光雷达停止扫描,但是不会停车.|
-|carMove  -f     | 小车向前.|
-|carMove  -b     | 小车后退.|
-|carMove  -l     | 小车左转.|
-|carMove  -r    |  小车右转.|
+ stm32f429igt6
 
-## 操作演示GIF ##
-![](https://i.imgur.com/eqzMpVY.gif)
-## 小车效果 ##
-![](https://i.imgur.com/zro4fZz.gif)
-## 源码以及PCB ##
-因为个人所学有限,所以仅仅是实现了小车自主避障,希望将来我有这个能力去继续完善,实现更多功能.(pcb文件夹里有原理图和pcb).
-> [https://github.com/balanceTWK/LidarCar.git](https://github.com/balanceTWK/LidarCar.git)
+因为基础工程是根据 bsp stm32f429-apollo 改的，所以电路原理图上一些引脚的分配我也尽量按照 apollo 开发板的方案设计。
 
-将下载下来的代码放在rt-thread-3.0.2\bsp\目录下,直接打开project.uvprojx文件即可.或者在我的百度云里下载完整的代码.
-百度云地址:[https://pan.baidu.com/s/1he8LQZstRXENBMgs_tQ5Mw](https://pan.baidu.com/s/1he8LQZstRXENBMgs_tQ5Mw)
+### 2.电机驱动部分 ###
 
+电机驱动芯片使用 L298N 。控制小车的速度与方向。
+
+电路原理图如下：
+
+ ![电机驱动电路](./picture/电机驱动电路.png)
+
+ 电机自带AB相编码器，用于测速（pi闭环控制）。
+
+### 3.激光雷达 ###
+
+ 查激光雷达数据手册
+
+ ![激光雷达接口](./picture/激光雷达接口.png)
+
+ 激光雷达需要 5v 供电，串口通信，一个 M_SCTP PWM输入口控制转速（M_SCTP可默认拉高省出pwm口）。
+
+![激光雷达pcb接口](./picture/激光雷达pcb接口.png)
+ 
+### 4.蓝牙串口 ###
+
+  因为使用了 RT-Thread 的组件 FinSH，（ FinSH 组件是 RT-Thread 的一大亮点。）为了方便无线调试，我使用两个配对好的蓝牙串口来通信，即插即用。
+
+  ![蓝牙串口](./picture/蓝牙pcb接口.png)
+
+### 5.其他 ###
+
+另外我还外加了 mpu9250模块，SDRAM、W25Q128、蜂鸣器、oled屏...等 用于以后的扩展。
+
+## 程序部分 ##
+
+整体的思路如下：
+
+ ![程序架构](./picture/软件结构.png)
+
+ 1. eaix4线程： 用于对激光雷达数据的处理。
+ 2. wireless线程： 用于无线传输。
+ 3. mpu9250线程： 用于9轴姿态传感器数据的处理。
+ 4. speed线程： 用于速度的闭环控制。
