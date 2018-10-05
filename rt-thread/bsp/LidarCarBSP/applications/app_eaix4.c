@@ -10,13 +10,14 @@ static struct rt_messagequeue   Eaix4Mq;
 /* 串口设备句柄 */
 static rt_device_t eaix4_device = RT_NULL;
 
-/* 回调函数 */
+/* 串口接收数据回调函数 */
 static rt_err_t eaix4_intput(rt_device_t dev, rt_size_t size)
 {
     rt_uint8_t ch;
     /* 读取1字节数据 */
     if (rt_device_read(eaix4_device, 0, &ch, 1) == 1)
     {
+        /* 发送到消息队列中 */
         rt_mq_send(&Eaix4Mq, &ch, 1);
     }
     return RT_EOK;
@@ -25,6 +26,7 @@ static rt_err_t eaix4_intput(rt_device_t dev, rt_size_t size)
 rt_uint8_t  eaix4_getchar(void)
 {
     rt_uint8_t ch;
+    /* 读取消息队列中的数据 */
     rt_mq_recv(&Eaix4Mq, &ch, 1, RT_WAITING_FOREVER);
     return ch;
 }

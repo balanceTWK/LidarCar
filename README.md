@@ -71,6 +71,164 @@
  2. wireless线程： 用于无线传输。
  3. mpu9250线程： 用于9轴姿态传感器数据的处理。
  4. speed线程： 用于速度的闭环控制。
+ 5. master线程： 作为主线程负责创建其他子线程，以及处理其他子线程发送的传感器信息。
+
+### 1.激光雷达 ###
+
+查看雷达开发手册
+
+图一：
+ ![扫描命令](./picture/扫描命令1.png)
+
+图二：
+ ![扫描命令](./picture/扫描命令2.png)
+
+ 当向激光雷达设备发送 [A5 60] 的时候，激光雷达会连续不断的返回扫描到的数据，直到你发送停止扫描命令为止，基于这种特性选择使用 RT-Thread 的消息队列机制。
+ 
+ ![激光雷达数据分析](./picture/数据.png)
+
+```c
+rt_err_t eaix4_open(const char *name)
+{
+    rt_err_t res;
+    /* 查找系统中的串口设备 */
+    eaix4_device = rt_device_find(name);
+    /* 查找到设备后将其打开 */
+    if (eaix4_device != RT_NULL)
+    {
+        /* 注册回调函数 eaix4_intput */
+        res = rt_device_set_rx_indicate(eaix4_device, eaix4_intput);
+        /* 检查返回值 */
+        if (res != RT_EOK)
+        {
+            rt_kprintf("set %s rx indicate error.%d\n", name, res);
+            return -RT_ERROR;
+        }
+        /* 打开设备，以可读写、中断方式 */
+        res = rt_device_open(eaix4_device, RT_DEVICE_OFLAG_RDWR | RT_DEVICE_FLAG_INT_RX);
+        /* 检查返回值 */
+        if (res != RT_EOK)
+        {
+            rt_kprintf("open %s device error.%d\n", name, res);
+            return -RT_ERROR;
+        }
+    }
+    else
+    {
+        rt_kprintf("can't find %s device.\n", name);
+        return -RT_ERROR;
+    }
+    /* 初始化消息队列对象 */
+    rt_mq_init(&Eaix4Mq, "EAIX4", Eaix4Buff, 1, sizeof(Eaix4Buff), RT_IPC_FLAG_FIFO);
+    return RT_EOK;
+}
+```
+
+```c
+/* 串口接收数据回调函数 */
+static rt_err_t eaix4_intput(rt_device_t dev, rt_size_t size)
+{
+    rt_uint8_t ch;
+    /* 读取1字节数据 */
+    if (rt_device_read(eaix4_device, 0, &ch, 1) == 1)
+    {
+        /* 将数据发送到消息队列中 */
+        rt_mq_send(&Eaix4Mq, &ch, 1);
+    }
+    return RT_EOK;
+}
+/* 读取消息队列中的数据 */
+rt_uint8_t  eaix4_getchar(void)
+{
+    rt_uint8_t ch;
+    /* 读取消息队列中的数据 */
+    rt_mq_recv(&Eaix4Mq, &ch, 1, RT_WAITING_FOREVER);
+    return ch;
+}
+/* 向激光雷达发送数据 */
+void eaix4_putchar(const rt_uint8_t c)
+{
+    rt_size_t len = 0;
+    rt_uint32_t timeout = 0;
+    do
+    {
+        len = rt_device_write(eaix4_device, 0, &c, 1);
+        timeout++;
+    }
+    while (len != 1 && timeout < 500);
+}
+```
+
+### 2.添加激光雷达控制命令 ###
+
+```c
+#include <finsh.h>
+#define stop                    "-s"
+#define force_stoppage          "-fs"
+#define start_scanning          "-sc"
+#define force_start_scanning    "-fsc"
+#define get_version_information "-gvf"
+#define get_health_status       "-ghs"
+void Eaix4Scaning()
+{
+    eaix4_putchar(0xA5);
+    eaix4_putchar(0x60);
+}
+void Eaix4stop()
+{
+    eaix4_putchar(0xA5);
+    eaix4_putchar(0x65);
+}
+void Eaix4Version()
+{
+    eaix4_putchar(0xA5);
+    eaix4_putchar(0x90);
+}
+void Eaix4Health()
+{
+    eaix4_putchar(0xA5);
+    eaix4_putchar(0x91);
+}
+void eaix4cmd(int argc, char **argv)
+{
+    if (argc > 1)
+    {
+        if (!rt_strcmp(argv[1], stop))
+        {
+            Eaix4stop();
+        }
+        else if (!rt_strcmp(argv[1], force_stoppage))
+        {
+            eaix4_putchar(0xA5);
+            eaix4_putchar(0x00);
+        }
+        else if (!rt_strcmp(argv[1], start_scanning))
+        {
+            Eaix4Scaning();
+        }
+        else if (!rt_strcmp(argv[1], force_start_scanning))
+        {
+            eaix4_putchar(0xA5);
+            eaix4_putchar(0x61);
+        }
+        else if (!rt_strcmp(argv[1], get_version_information))
+        {
+            Eaix4Version();
+        }
+        else if (!rt_strcmp(argv[1], get_health_status))
+        {
+            Eaix4Health();
+        }
+        else
+        {
+            rt_kprintf("ERROR command !\n");
+        }
+    }
+}
+MSH_CMD_EXPORT(eaix4cmd, -s - fs - sc - fsc - gvf - ghs);
+```
+
+MSH_CMD_EXPORT 的作用就是向 msh 中增加命令。
 
 ## 几个主要的命令 ##
 
